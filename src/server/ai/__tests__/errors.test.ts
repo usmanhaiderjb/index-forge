@@ -50,6 +50,16 @@ describe("describeAiError", () => {
     expect(message.length).toBeLessThanOrEqual(400);
   });
 
+  it("points at Gemini key on API key error", () => {
+    const error = new Error("API_KEY_INVALID: API key not valid. Please pass a valid API key.");
+    expect(describeAiError(error)).toMatch(/GEMINI_API_KEY/);
+  });
+
+  it("handles Gemini quota and resource exhaustion", () => {
+    const error = new Error("RESOURCE_EXHAUSTED: Quota exceeded for quota metric 'Generate Content API Requests'");
+    expect(describeAiError(error)).toMatch(/rate limit or quota/i);
+  });
+
   it("handles a non-Error value", () => {
     expect(describeAiError("something broke")).toBe("something broke");
   });

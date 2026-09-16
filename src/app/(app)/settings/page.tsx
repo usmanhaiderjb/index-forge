@@ -101,7 +101,7 @@ export default function SettingsPage() {
           <CardContent>
             {!aiStatus.data?.configured ? (
               <p className="text-sm text-[var(--text-secondary)]">
-                AI features are disabled. Set <code>ANTHROPIC_API_KEY</code> to enable them.
+                AI features are disabled. Set <code>GEMINI_API_KEY</code> or <code>ANTHROPIC_API_KEY</code> to enable them.
               </p>
             ) : aiStatus.data.usage ? (
               <div className="flex flex-col gap-3">

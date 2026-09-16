@@ -31,6 +31,7 @@ function report(name: string, ok: boolean, detail = "") {
 }
 
 async function run<T>(name: string, fn: () => Promise<T>, check: (value: T) => string | null) {
+  await new Promise((r) => setTimeout(r, 6000));
   const started = Date.now();
   try {
     const value = await fn();
@@ -44,8 +45,8 @@ async function run<T>(name: string, fn: () => Promise<T>, check: (value: T) => s
 }
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("ANTHROPIC_API_KEY is not set — nothing to test.");
+  if (!process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    console.log("Neither GEMINI_API_KEY nor ANTHROPIC_API_KEY is set — nothing to test.");
     process.exit(1);
   }
 

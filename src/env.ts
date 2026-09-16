@@ -30,6 +30,10 @@ export const env = createEnv({
         message: "ENCRYPTION_KEY must be 32 bytes encoded as base64",
       }),
 
+    GEMINI_API_KEY: z.string().optional(),
+    GEMINI_MODEL: z.string().default("gemini-2.5-flash"),
+    GEMINI_MODEL_BULK: z.string().default("gemini-2.5-flash"),
+
     ANTHROPIC_API_KEY: z.string().optional(),
     /**
      * Bearer-token auth, for gateways that expect it.
@@ -119,6 +123,9 @@ export const env = createEnv({
     AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID,
     AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET,
     ENCRYPTION_KEY: process.env.ENCRYPTION_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+    GEMINI_MODEL: process.env.GEMINI_MODEL,
+    GEMINI_MODEL_BULK: process.env.GEMINI_MODEL_BULK,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     ANTHROPIC_AUTH_TOKEN: process.env.ANTHROPIC_AUTH_TOKEN,
     ANTHROPIC_BASE_URL: process.env.ANTHROPIC_BASE_URL,

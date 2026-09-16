@@ -141,7 +141,7 @@ export const reviewRouter = createTRPCRouter({
       if (!aiConfigured()) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "Drafting needs ANTHROPIC_API_KEY set on this deployment",
+          message: "Drafting needs GEMINI_API_KEY or ANTHROPIC_API_KEY set on this deployment",
         });
       }
 

@@ -21,7 +21,7 @@ async function guard(organizationId: string, feature: string, perMinute = 10) {
   if (!aiConfigured()) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
-      message: "AI features need ANTHROPIC_API_KEY set on this deployment",
+      message: "AI features need GEMINI_API_KEY or ANTHROPIC_API_KEY set on this deployment",
     });
   }
   const { allowed, resetIn } = await rateLimit(`ai:${organizationId}:${feature}`, perMinute, 60);

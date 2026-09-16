@@ -66,7 +66,8 @@ export function OptimizeView({ appId }: { appId: string }) {
         <CardContent>
           <p className="text-sm font-medium">AI features are not configured</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Set <code className="rounded bg-[var(--page)] px-1 py-0.5 text-xs">ANTHROPIC_API_KEY</code>{" "}
+            Set <code className="rounded bg-[var(--page)] px-1 py-0.5 text-xs">GEMINI_API_KEY</code> or{" "}
+            <code className="rounded bg-[var(--page)] px-1 py-0.5 text-xs">ANTHROPIC_API_KEY</code>{" "}
             on the deployment to enable keyword strategy, metadata generation, review themes and
             recommendations. Everything else — tracking, ranks, the deterministic listing audit —
             works without it.
