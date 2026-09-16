@@ -15,7 +15,7 @@ export const maxDuration = 300;
  *
  *   POST /api/cron?job=tick   Authorization: Bearer $CRON_SECRET
  */
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   if (!env.CRON_SECRET) {
     return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 503 });
   }
@@ -44,3 +44,12 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET(request: NextRequest) {
+  return handleCron(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleCron(request);
+}
+
