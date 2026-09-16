@@ -47,8 +47,11 @@ function requireClient() {
   };
 }
 
-export function googleRedirectUri(): string {
-  return `${env.APP_URL}/api/oauth/google/callback`;
+export function googleRedirectUri(origin?: string): string {
+  if (origin) {
+    return `${origin.replace(/\/$/, "")}/api/oauth/google/callback`;
+  }
+  return `${env.APP_URL.replace(/\/$/, "")}/api/oauth/google/callback`;
 }
 
 /**
@@ -56,11 +59,16 @@ export function googleRedirectUri(): string {
  * builds the URL. `prompt=consent` + `access_type=offline` is required to get
  * a refresh token back on re-authorization.
  */
-export function buildGoogleAuthUrl(opts: { scopes: string[]; state: string; loginHint?: string }): string {
+export function buildGoogleAuthUrl(opts: {
+  scopes: string[];
+  state: string;
+  loginHint?: string;
+  redirectUri?: string;
+}): string {
   const { clientId } = requireClient();
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: googleRedirectUri(),
+    redirect_uri: opts.redirectUri ?? googleRedirectUri(),
     response_type: "code",
     access_type: "offline",
     prompt: "consent",
@@ -81,7 +89,7 @@ type TokenResponse = {
   id_token?: string;
 };
 
-export async function exchangeGoogleCode(code: string): Promise<GoogleCredentials> {
+export async function exchangeGoogleCode(code: string, redirectUri?: string): Promise<GoogleCredentials> {
   const { clientId, clientSecret } = requireClient();
 
   const res = await fetch(TOKEN_ENDPOINT, {
@@ -91,7 +99,7 @@ export async function exchangeGoogleCode(code: string): Promise<GoogleCredential
       code,
       client_id: clientId,
       client_secret: clientSecret,
-      redirect_uri: googleRedirectUri(),
+      redirect_uri: redirectUri ?? googleRedirectUri(),
       grant_type: "authorization_code",
     }),
   });

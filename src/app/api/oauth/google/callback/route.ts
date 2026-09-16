@@ -16,6 +16,7 @@ type StoredState = {
   userId: string;
   organizationId: string;
   provider: Provider;
+  redirectUri?: string;
 };
 
 export async function GET(request: NextRequest) {
@@ -23,13 +24,13 @@ export async function GET(request: NextRequest) {
 
   const error = params.get("error");
   if (error) {
-    return redirectWith({ error: `Google returned "${error}"` });
+    return redirectWith({ error: `Google returned "${error}"` }, request);
   }
 
   const code = params.get("code");
   const state = params.get("state");
   if (!code || !state) {
-    return redirectWith({ error: "Missing authorization code" });
+    return redirectWith({ error: "Missing authorization code" }, request);
   }
 
   // Single-use: consume the state before doing anything else.
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   await redis.del(key);
 
   if (!raw) {
-    return redirectWith({ error: "This authorization link expired. Start again." });
+    return redirectWith({ error: "This authorization link expired. Start again." }, request);
   }
 
   const stored = JSON.parse(raw) as StoredState;
@@ -53,11 +54,11 @@ export async function GET(request: NextRequest) {
     },
   });
   if (!membership || (membership.role !== "OWNER" && membership.role !== "ADMIN")) {
-    return redirectWith({ error: "You no longer have permission to add integrations" });
+    return redirectWith({ error: "You no longer have permission to add integrations" }, request);
   }
 
   try {
-    const credentials = await exchangeGoogleCode(code);
+    const credentials = await exchangeGoogleCode(code, stored.redirectUri);
     const userInfo = await fetchGoogleUserInfo(credentials.accessToken);
     const connector = getConnector(stored.provider);
 
@@ -133,16 +134,27 @@ export async function GET(request: NextRequest) {
       result.ok
         ? { connected: stored.provider }
         : { error: `Connected, but the first check failed: ${result.detail}` },
+      request,
     );
   } catch (err) {
-    return redirectWith({
-      error: err instanceof Error ? err.message : "Authorization failed",
-    });
+    return redirectWith(
+      {
+        error: err instanceof Error ? err.message : "Authorization failed",
+      },
+      request,
+    );
   }
 }
 
-function redirectWith(params: Record<string, string>) {
-  const url = new URL("/integrations", env.APP_URL);
+function redirectWith(params: Record<string, string>, request?: NextRequest) {
+  let origin = env.APP_URL;
+  if (request) {
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
+    if (host) origin = `${proto}://${host}`;
+  }
+  const url = new URL("/integrations", origin);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   return NextResponse.redirect(url);
 }
+

@@ -55,6 +55,11 @@ export async function GET(request: NextRequest) {
     return errorRedirect("You need admin access to connect an integration");
   }
 
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? request.nextUrl.host;
+  const origin = host ? `${proto}://${host}` : env.APP_URL;
+  const redirectUri = `${origin.replace(/\/$/, "")}/api/oauth/google/callback`;
+
   const state = randomBytes(24).toString("base64url");
   await redis.set(
     `oauth:google:${state}`,
@@ -62,13 +67,14 @@ export async function GET(request: NextRequest) {
       userId: session.user.id,
       organizationId: membership.organizationId,
       provider,
+      redirectUri,
     }),
     "EX",
     600,
   );
 
   const connector = getConnector(provider);
-  const url = buildGoogleAuthUrl({ scopes: connector.scopes, state });
+  const url = buildGoogleAuthUrl({ scopes: connector.scopes, state, redirectUri });
 
   return NextResponse.redirect(url);
 }
@@ -78,3 +84,4 @@ function errorRedirect(message: string) {
   url.searchParams.set("error", message);
   return NextResponse.redirect(url);
 }
+
