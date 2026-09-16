@@ -65,7 +65,7 @@ export async function syncConnection(connectionId: string, days = 30) {
         }
       }
 
-      const hasSuccess = record.wroteCount > 0 || failures.length < connection.resourceLinks.length;
+      const hasSuccess = failures.length < connection.resourceLinks.length;
 
       await db.connection.update({
         where: { id: connectionId },
