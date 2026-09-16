@@ -1,9 +1,9 @@
-name: 24/7 Corpus & Market Growth
+name: 24/7 Continuous Corpus & Market Growth
 
 on:
   schedule:
-    # Runs every 6 hours automatically (00:00, 06:00, 12:00, 18:00 UTC)
-    - cron: "0 */6 * * *"
+    # Backup heartbeat: triggers every 4 hours automatically
+    - cron: "0 */4 * * *"
   workflow_dispatch:
     inputs:
       country:
@@ -11,9 +11,13 @@ on:
         required: false
         default: "us"
       run_duration:
-        description: "Max run duration (e.g. 45m, 1h, 2h)"
+        description: "Max run duration (e.g. 5h, 300m)"
         required: false
-        default: "45m"
+        default: "300m"
+
+permissions:
+  actions: write
+  contents: read
 
 concurrency:
   group: corpus-growth
@@ -21,9 +25,9 @@ concurrency:
 
 jobs:
   grow:
-    name: Grow Corpus & Trends
+    name: Continuous 24/7 Corpus Growth
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
 
     services:
       redis:
@@ -52,14 +56,14 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
-      - name: Verify Environment Secrets
+      - name: Verify Database Secret
         run: |
           if [ -z "${{ secrets.DATABASE_URL }}" ]; then
-            echo "::error ::DATABASE_URL secret is missing! Please go to GitHub Repo -> Settings -> Secrets and variables -> Actions -> New repository secret and add DATABASE_URL."
+            echo "::error ::DATABASE_URL secret is missing! Please go to Settings -> Secrets and variables -> Actions -> New repository secret and add DATABASE_URL."
             exit 1
           fi
 
-      - name: Run Corpus Growth
+      - name: Run Corpus Growth (Continuous 5-Hour Block)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL || secrets.DATABASE_URL }}
@@ -76,7 +80,18 @@ jobs:
           PRISMA_LOG_QUERIES: "0"
         run: |
           COUNTRY="${{ github.event.inputs.country || 'us' }}"
-          DURATION="${{ github.event.inputs.run_duration || '45m' }}"
-          echo "Starting corpus growth for country: $COUNTRY (Duration: $DURATION)"
+          DURATION="${{ github.event.inputs.run_duration || '300m' }}"
+          echo "=========================================================="
+          echo "🚀 Starting 24/7 Corpus Growth for country: $COUNTRY"
+          echo "⏱ Running continuous block for: $DURATION"
+          echo "=========================================================="
           timeout $DURATION npx tsx --require ./scripts/allow-server-modules.cjs --env-file-if-exists=.env scripts/grow.ts --country=$COUNTRY || true
-          echo "Growth cycle completed."
+          echo "5-hour crawling block completed."
+
+      - name: Loop & Auto-Trigger Next 24/7 Cycle
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔄 Automatically launching next 24/7 continuous cycle..."
+          gh workflow run corpus-grow.yml || true
