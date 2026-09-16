@@ -1,0 +1,59 @@
+name: 24/7 Corpus & Market Growth
+
+on:
+  schedule:
+    # Runs every 6 hours automatically (00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      country:
+        description: "Target Store Country (e.g. us, gb, de, jp)"
+        required: false
+        default: "us"
+      run_duration:
+        description: "Max run duration (e.g. 45m, 1h, 2h)"
+        required: false
+        default: "45m"
+
+concurrency:
+  group: corpus-growth
+  cancel-in-progress: false
+
+jobs:
+  grow:
+    name: Grow Corpus & Trends
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Run Corpus Growth
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_ENV: production
+          SKIP_ENV_VALIDATION: "1"
+          PRISMA_LOG_QUERIES: "0"
+        run: |
+          COUNTRY="${{ github.event.inputs.country || 'us' }}"
+          DURATION="${{ github.event.inputs.run_duration || '45m' }}"
+          echo "Starting corpus growth for country: $COUNTRY (Duration: $DURATION)"
+          timeout $DURATION npx tsx --env-file-if-exists=.env scripts/grow.ts --country=$COUNTRY || true
+          echo "Growth cycle finished successfully."
