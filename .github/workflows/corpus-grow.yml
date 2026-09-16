@@ -66,8 +66,13 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL || 'redis://localhost:6379' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'bbec8f51447d0897e41bac21a1374aa65d04594fec0560f88493579f2ae402b0' }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY || 'fudhPTiOp+40WC77S1VBBBorV+MoTAzYdc2169gh94s=' }}
+          ASO_PROVIDER: builtin
+          ASO_USER_AGENT: ASO-Dashboard/0.1
+          ASO_SCRAPE_DELAY_MS: "1200"
+          ASO_SEARCH_DELAY_MS: "4000"
           NODE_ENV: production
-          SKIP_ENV_VALIDATION: "1"
           PRISMA_LOG_QUERIES: "0"
         run: |
           COUNTRY="${{ github.event.inputs.country || 'us' }}"

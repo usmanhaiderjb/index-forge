@@ -82,12 +82,13 @@ export async function rateLimit(
 ): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
   const redisKey = `ratelimit:${key}`;
   const count = await redis.incr(redisKey);
-  if (count === 1) await redis.expire(redisKey, windowSeconds);
+  const windowSecs = Math.max(1, Math.round(Number(windowSeconds) || 60));
+  if (count === 1) await redis.expire(redisKey, windowSecs);
   const ttl = await redis.ttl(redisKey);
   return {
     allowed: count <= limit,
     remaining: Math.max(0, limit - count),
-    resetIn: ttl < 0 ? windowSeconds : ttl,
+    resetIn: ttl < 0 ? windowSecs : ttl,
   };
 }
 
@@ -97,6 +98,7 @@ export async function rateLimit(
  */
 export async function throttleHost(host: string, minIntervalMs: number): Promise<void> {
   const key = `throttle:${host}`;
+  const interval = Math.max(10, Math.round(Number(minIntervalMs) || 1200));
 
   // SET NX is the whole point: the old read-wait-write version let every
   // concurrent caller read the same timestamp, sleep the same amount, and then
@@ -104,7 +106,7 @@ export async function throttleHost(host: string, minIntervalMs: number): Promise
   // appearing to be throttled. Only one caller can take the key, and everyone
   // else waits out its TTL, which holds across processes and workers too.
   for (;;) {
-    const taken = await blockingRedis().set(key, "1", "PX", minIntervalMs, "NX");
+    const taken = await blockingRedis().set(key, "1", "PX", interval, "NX");
     if (taken) return;
 
     const ttl = await blockingRedis().pttl(key);

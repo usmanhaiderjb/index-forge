@@ -25,9 +25,11 @@ const SLOW_HOSTS = new Set(["itunes.apple.com", "play.google.com"]);
 
 /** The minimum gap between requests to one host. */
 export function intervalFor(host: string): number {
+  const scrapeDelay = Number(env.ASO_SCRAPE_DELAY_MS) || 1200;
+  const searchDelay = Number(env.ASO_SEARCH_DELAY_MS) || 4000;
   return SLOW_HOSTS.has(host)
-    ? Math.max(env.ASO_SCRAPE_DELAY_MS, env.ASO_SEARCH_DELAY_MS)
-    : env.ASO_SCRAPE_DELAY_MS;
+    ? Math.max(scrapeDelay, searchDelay)
+    : scrapeDelay;
 }
 
 export async function storeFetch(
