@@ -58,6 +58,18 @@ const nicheHours = Number(arg("niche-hours", "24"));
 const chartDepth = Number(arg("chart-depth", "20"));
 const nicheApps = Number(arg("niche-apps", "8"));
 
+if (process.env.PORT) {
+  const http = await import("node:http");
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("OK - IndexForge Corpus Crawler running 24/7\n");
+  });
+  const port = Number(process.env.PORT) || 3000;
+  server.listen(port, () => {
+    console.log(`[http] healthcheck listener active on port ${port}`);
+  });
+}
+
 const want = {
   keywords: !flag("no-keywords"),
   trends: !flag("no-trends"),
