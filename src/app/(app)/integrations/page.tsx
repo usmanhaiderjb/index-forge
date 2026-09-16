@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Link2, Plug, RefreshCw, TriangleAlert, Unplug } from "lucide-react";
+import { CheckCircle2, ExternalLink, Link2, Loader2, Plug, RefreshCw, Search, TriangleAlert, Unplug, Zap } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
@@ -185,9 +185,18 @@ export default function IntegrationsPage() {
                             <RefreshCw /> Sync
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant={resourcesFor === connection.id ? "primary" : "ghost"}
                             size="sm"
-                            onClick={() => setResourcesFor(connection.id)}
+                            onClick={() => {
+                              if (resourcesFor === connection.id) {
+                                setResourcesFor(null);
+                              } else {
+                                setResourcesFor(connection.id);
+                                setTimeout(() => {
+                                  document.getElementById("resource-linker")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                                }, 50);
+                              }
+                            }}
                           >
                             <Link2 /> Link apps
                           </Button>
@@ -453,11 +462,39 @@ function ResourceLinker({
   onClose: () => void;
 }) {
   const utils = api.useUtils();
+  const [filter, setFilter] = React.useState("");
   const resources = api.connections.resources.useMutation();
+
+  const refetch = () => {
+    resources.mutate({ connectionId });
+  };
+
   const link = api.connections.link.useMutation({
     onSuccess: async () => {
-      toast.success("Linked — a 90-day backfill is queued");
+      toast.success("App linked — 90-day backfill queued");
       await utils.connections.catalog.invalidate();
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const importAndLink = api.connections.importAndLink.useMutation({
+    onSuccess: async (data) => {
+      toast.success(`Tracked "${data.app.name}" & linked — 90-day backfill queued`);
+      await Promise.all([
+        utils.apps.list.invalidate(),
+        utils.connections.catalog.invalidate(),
+      ]);
+      refetch();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const unlink = api.connections.unlink.useMutation({
+    onSuccess: async () => {
+      toast.success("App unlinked");
+      await utils.connections.catalog.invalidate();
+      refetch();
     },
     onError: (error) => toast.error(error.message),
   });
@@ -467,82 +504,255 @@ function ResourceLinker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectionId]);
 
+  const filteredData = React.useMemo(() => {
+    if (!resources.data) return [];
+    if (!filter.trim()) return resources.data;
+    const q = filter.toLowerCase().trim();
+    return resources.data.filter((item) => {
+      const nameMatch = item.resource.name.toLowerCase().includes(q);
+      const idMatch = item.resource.externalId.toLowerCase().includes(q);
+      const storeMatch = item.resource.storeId?.toLowerCase().includes(q);
+      const bundleMatch = item.resource.bundleId?.toLowerCase().includes(q);
+      const appNameMatch = item.linkedAppName?.toLowerCase().includes(q);
+      const projectMatch = String(item.resource.metadata?.projectId ?? "")
+        .toLowerCase()
+        .includes(q);
+      return nameMatch || idMatch || storeMatch || bundleMatch || appNameMatch || projectMatch;
+    });
+  }, [resources.data, filter]);
+
   return (
-    <Card>
-      <CardHeader>
+    <Card id="resource-linker" className="border-[var(--border-strong)] shadow-md">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[var(--border)]">
         <div>
-          <CardTitle>Link apps to this connection</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Link2 className="size-4 text-[var(--accent)]" />
+            Link Apps to this Connection
+          </CardTitle>
           <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
-            Resources matched by store id or bundle id are pre-selected.
+            Match remote accounts, Google Analytics streams, or AdMob properties to your tracked apps.
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          Close
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="ghost" size="sm" onClick={refetch} disabled={resources.isPending}>
+            <RefreshCw className={resources.isPending ? "animate-spin" : ""} /> Refresh
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="pt-4 flex flex-col gap-3">
         {resources.isPending ? (
-          <Skeleton className="h-32 w-full" />
+          <div className="flex flex-col items-center justify-center py-10 text-center gap-3">
+            <Loader2 className="size-7 animate-spin text-[var(--accent)]" />
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              Fetching remote projects and apps...
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Querying Google Firebase & Analytics endpoints
+            </p>
+          </div>
         ) : resources.error ? (
-          <p className="text-sm text-[var(--status-critical)]">{resources.error.message}</p>
+          <div className="rounded-lg border border-[var(--status-critical)] bg-[color-mix(in_oklab,var(--status-critical)_10%,transparent)] p-4">
+            <div className="flex items-start gap-2.5">
+              <TriangleAlert className="size-4 text-[var(--status-critical)] shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[var(--status-critical)]">
+                  Failed to load remote resources
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  {resources.error.message}
+                </p>
+                <Button variant="secondary" size="sm" onClick={refetch} className="mt-3">
+                  Retry
+                </Button>
+              </div>
+            </div>
+          </div>
         ) : resources.data?.length ? (
-          <ul className="flex flex-col gap-2">
-            {resources.data.map(({ resource, suggestedAppId }) => (
-              <li
-                key={resource.externalId}
-                className="flex flex-wrap items-center gap-2 rounded-md border border-[var(--border)] p-2.5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{resource.name}</p>
-                  <p className="truncate text-xs text-[var(--text-muted)]">{resource.externalId}</p>
-                </div>
+          <>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 size-4 text-[var(--text-muted)]" />
+                <Input
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  placeholder="Filter by app name, package ID, bundle ID..."
+                  className="pl-8 text-xs h-9"
+                />
+              </div>
+              <span className="text-xs text-[var(--text-muted)] self-center">
+                Showing {filteredData.length} of {resources.data.length} resource{resources.data.length === 1 ? "" : "s"}
+              </span>
+            </div>
 
-                <form
-                  className="flex items-center gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const form = new FormData(e.currentTarget);
-                    const appId = String(form.get("appId"));
-                    if (!appId) return;
+            <ul className="flex flex-col gap-2 max-h-[520px] overflow-y-auto pr-1">
+              {filteredData.map(
+                ({ resource, suggestedAppId, isLinked, linkedAppName, linkId }) => {
+                  const effectiveStoreId = resource.storeId || resource.bundleId;
+                  const isTrackAndLinking =
+                    importAndLink.isPending &&
+                    importAndLink.variables?.externalId === resource.externalId;
+                  const isLinking =
+                    link.isPending && link.variables?.externalId === resource.externalId;
+                  const isUnlinking =
+                    unlink.isPending && unlink.variables?.linkId === linkId;
 
-                    const bucket = String(form.get("reportsBucket") ?? "").trim();
-                    link.mutate({
-                      connectionId,
-                      appId,
-                      externalId: resource.externalId,
-                      externalRef: resource.externalRef,
-                      displayName: resource.name,
-                      metadata: {
-                        ...(resource.metadata ?? {}),
-                        ...(bucket ? { reportsBucket: bucket } : {}),
-                      },
-                    });
-                  }}
-                >
-                  <Select name="appId" defaultValue={suggestedAppId ?? ""}>
-                    <option value="">Not linked</option>
-                    {apps.map((app) => (
-                      <option key={app.id} value={app.id}>
-                        {app.name}
-                      </option>
-                    ))}
-                  </Select>
-                  <Input
-                    name="reportsBucket"
-                    placeholder="Play reports bucket (optional)"
-                    className="w-56"
-                  />
-                  <Button variant="secondary" size="sm" type="submit">
-                    Link
-                  </Button>
-                </form>
-              </li>
-            ))}
-          </ul>
+                  return (
+                    <li
+                      key={resource.externalId}
+                      className="flex flex-col md:flex-row md:items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-raised)] p-3 hover:border-[var(--border-strong)] transition-colors"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="truncate text-sm font-medium text-[var(--text-primary)]">
+                            {resource.name}
+                          </span>
+                          {resource.platform ? (
+                            <Badge tone="neutral" className="text-[10px] font-mono uppercase px-1.5 py-0">
+                              {resource.platform}
+                            </Badge>
+                          ) : null}
+                          {isLinked ? (
+                            <Badge tone="good" className="text-xs flex items-center gap-1">
+                              <CheckCircle2 className="size-3" />
+                              Linked to {linkedAppName ?? "App"}
+                            </Badge>
+                          ) : (
+                            <Badge tone="neutral" className="text-[11px]">
+                              Not linked
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-secondary)] flex-wrap">
+                          {effectiveStoreId ? (
+                            <code className="font-mono text-[11px] bg-[var(--page)] px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-primary)] select-all">
+                              {effectiveStoreId}
+                            </code>
+                          ) : null}
+                          {resource.metadata?.projectId ? (
+                            <span className="text-[var(--text-muted)] text-[11px]">
+                              Project: <strong className="font-normal text-[var(--text-secondary)]">{String(resource.metadata.projectId)}</strong>
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap shrink-0">
+                        {isLinked && linkId ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isUnlinking}
+                            onClick={() => unlink.mutate({ linkId })}
+                            className="text-[var(--status-critical)] hover:bg-[var(--page)] text-xs h-8"
+                          >
+                            {isUnlinking ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Unplug className="size-3.5" />
+                            )}
+                            Unlink
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              disabled={isTrackAndLinking}
+                              onClick={() =>
+                                importAndLink.mutate({
+                                  connectionId,
+                                  platform: (resource.platform as "IOS" | "ANDROID") ?? "ANDROID",
+                                  storeId: resource.storeId,
+                                  bundleId: resource.bundleId,
+                                  displayName: resource.name,
+                                  externalId: resource.externalId,
+                                  externalRef: resource.externalRef,
+                                  metadata: resource.metadata as Record<string, unknown> | undefined,
+                                })
+                              }
+                              className="text-xs h-8 whitespace-nowrap shadow-sm"
+                            >
+                              {isTrackAndLinking ? (
+                                <Loader2 className="size-3.5 animate-spin" />
+                              ) : (
+                                <Zap className="size-3.5" />
+                              )}
+                              Track & Link
+                            </Button>
+
+                            <form
+                              className="flex items-center gap-1.5"
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                const form = new FormData(e.currentTarget);
+                                const appId = String(form.get("appId") ?? "");
+                                if (!appId) {
+                                  toast.error(
+                                    "Please select an app from the dropdown or click 'Track & Link' to import it.",
+                                  );
+                                  return;
+                                }
+
+                                const bucket = String(form.get("reportsBucket") ?? "").trim();
+                                link.mutate({
+                                  connectionId,
+                                  appId,
+                                  externalId: resource.externalId,
+                                  externalRef: resource.externalRef,
+                                  displayName: resource.name,
+                                  metadata: {
+                                    ...(resource.metadata ?? {}),
+                                    ...(bucket ? { reportsBucket: bucket } : {}),
+                                  },
+                                });
+                              }}
+                            >
+                              <Select
+                                name="appId"
+                                defaultValue={suggestedAppId ?? ""}
+                                className="text-xs h-8 max-w-[170px]"
+                              >
+                                <option value="">Select tracked app...</option>
+                                {apps.map((app) => (
+                                  <option key={app.id} value={app.id}>
+                                    {app.name}
+                                  </option>
+                                ))}
+                              </Select>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                type="submit"
+                                disabled={isLinking}
+                                className="text-xs h-8"
+                              >
+                                {isLinking ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                                Link
+                              </Button>
+                            </form>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                },
+              )}
+            </ul>
+          </>
         ) : (
-          <p className="text-sm text-[var(--text-secondary)]">
-            No linkable resources found for this account.
-          </p>
+          <div className="py-8 text-center">
+            <p className="text-sm font-medium text-[var(--text-secondary)]">
+              No linkable resources found for this account.
+            </p>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              Ensure this Google account has active Firebase projects with Android/iOS apps configured.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

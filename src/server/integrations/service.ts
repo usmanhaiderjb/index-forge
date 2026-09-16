@@ -111,20 +111,34 @@ export async function listRemoteResources(connectionId: string): Promise<RemoteR
  */
 export async function suggestResourceLinks(connectionId: string) {
   const connection = await db.connection.findUniqueOrThrow({ where: { id: connectionId } });
-  const [resources, apps] = await Promise.all([
+  const [resources, apps, existingLinks] = await Promise.all([
     listRemoteResources(connectionId),
     db.app.findMany({ where: { organizationId: connection.organizationId } }),
+    db.resourceLink.findMany({
+      where: { connectionId },
+      include: { app: { select: { id: true, name: true, storeId: true, iconUrl: true } } },
+    }),
   ]);
 
   const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
   return resources.map((resource) => {
+    const activeLink = existingLinks.find((l) => l.externalId === resource.externalId);
+
     const match =
+      (activeLink ? activeLink.app : null) ??
       apps.find((a) => resource.storeId && a.storeId === resource.storeId) ??
       apps.find((a) => resource.bundleId && a.bundleId === resource.bundleId) ??
       apps.find((a) => normalize(a.name) === normalize(resource.name));
 
-    return { resource, suggestedAppId: match?.id ?? null };
+    return {
+      resource,
+      suggestedAppId: match?.id ?? null,
+      isLinked: Boolean(activeLink),
+      linkedAppId: activeLink?.appId ?? null,
+      linkedAppName: activeLink?.app?.name ?? null,
+      linkId: activeLink?.id ?? null,
+    };
   });
 }
 

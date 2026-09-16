@@ -11,6 +11,7 @@ import {
   suggestResourceLinks,
   testConnection,
 } from "@/server/integrations/service";
+import { getAsoProvider } from "@/server/aso/provider";
 import { enqueue } from "@/server/jobs/queues";
 
 export const connectionRouter = createTRPCRouter({
@@ -281,8 +282,120 @@ export const connectionRouter = createTRPCRouter({
         },
       });
 
-      await enqueue({ type: "connection.sync", connectionId: input.connectionId, days: 90 });
+      await enqueue(
+        { type: "connection.sync", connectionId: input.connectionId, days: 90 },
+        { jobId: `connection.sync-${input.connectionId}-${Date.now()}` },
+      );
       return link;
+    }),
+
+  /**
+   * 1-Click Import & Link: Creates the App record in the organization if it doesn't
+   * already exist (enriching from App Store / Google Play when possible), and links
+   * it to the connection immediately.
+   */
+  importAndLink: adminProcedure
+    .input(
+      z.object({
+        connectionId: z.string().cuid(),
+        platform: z.enum(["IOS", "ANDROID"]).default("ANDROID"),
+        storeId: z.string().optional(),
+        bundleId: z.string().optional(),
+        displayName: z.string().min(1),
+        externalId: z.string().min(1),
+        externalRef: z.string().optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+        country: z.string().length(2).default("us"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertConnection(ctx.db, input.connectionId, ctx.organizationId);
+
+      const targetStoreId = input.storeId || input.bundleId || input.displayName;
+
+      // 1. Look for an existing app in this organization
+      let app = await ctx.db.app.findFirst({
+        where: {
+          organizationId: ctx.organizationId,
+          OR: [
+            ...(input.storeId ? [{ storeId: input.storeId, platform: input.platform }] : []),
+            ...(input.bundleId ? [{ bundleId: input.bundleId, platform: input.platform }] : []),
+            { name: input.displayName, platform: input.platform },
+          ],
+        },
+      });
+
+      // 2. If app doesn't exist, create it!
+      if (!app) {
+        let storeDetail: {
+          name?: string;
+          developer?: string;
+          iconUrl?: string;
+          bundleId?: string;
+          currentVersion?: string;
+          category?: string;
+        } | null = null;
+
+        if (input.storeId) {
+          try {
+            const provider = await getAsoProvider();
+            storeDetail = await provider.getApp(input.platform, input.storeId, {
+              country: input.country,
+              locale: "en-US",
+            });
+          } catch {
+            // Fallback gracefully if app is unlisted or not in US store
+          }
+        }
+
+        app = await ctx.db.app.create({
+          data: {
+            organizationId: ctx.organizationId,
+            platform: input.platform,
+            storeId: input.storeId || storeDetail?.bundleId || targetStoreId,
+            bundleId: input.bundleId || storeDetail?.bundleId || input.storeId,
+            name: storeDetail?.name || input.displayName,
+            developer: storeDetail?.developer || "Developer",
+            iconUrl: storeDetail?.iconUrl,
+            category: storeDetail?.category,
+            currentVersion: storeDetail?.currentVersion,
+            country: input.country,
+            locale: "en-US",
+          },
+        });
+      }
+
+      // 3. Create or upsert the ResourceLink
+      const link = await ctx.db.resourceLink.upsert({
+        where: {
+          connectionId_appId_externalId: {
+            connectionId: input.connectionId,
+            appId: app.id,
+            externalId: input.externalId,
+          },
+        },
+        create: {
+          connectionId: input.connectionId,
+          appId: app.id,
+          externalId: input.externalId,
+          externalRef: input.externalRef,
+          displayName: input.displayName,
+          metadata: (input.metadata ?? undefined) as never,
+        },
+        update: {
+          externalRef: input.externalRef,
+          displayName: input.displayName,
+          metadata: (input.metadata ?? undefined) as never,
+        },
+      });
+
+      // 4. Enqueue sync
+      await enqueue(
+        { type: "connection.sync", connectionId: input.connectionId, days: 90 },
+        { jobId: `connection.sync-${input.connectionId}-${Date.now()}` },
+      );
+
+      return { app, link };
     }),
 
   unlink: adminProcedure
