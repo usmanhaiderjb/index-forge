@@ -79,34 +79,36 @@ export function ReviewsView({ appId }: { appId: string }) {
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-[var(--text-secondary)]">{themes.data.summary}</p>
-            <ul className="flex flex-col gap-3">
-              {themes.data.themes.map((theme) => (
-                <li key={theme.theme} className="rounded-md border border-[var(--border)] p-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-medium">{theme.theme}</p>
-                    <Badge
-                      tone={
-                        theme.sentiment === "NEGATIVE"
-                          ? "critical"
-                          : theme.sentiment === "POSITIVE"
-                            ? "good"
-                            : "neutral"
-                      }
-                    >
-                      {theme.sentiment}
-                    </Badge>
-                    <Badge>{theme.mentionCount} mentions</Badge>
-                    <Badge tone={theme.severity === "HIGH" || theme.severity === "CRITICAL" ? "critical" : "neutral"}>
-                      {theme.severity}
-                    </Badge>
-                  </div>
-                  <blockquote className="mt-2 border-l-2 border-[var(--border-strong)] pl-3 text-xs italic text-[var(--text-secondary)]">
-                    {theme.exampleQuote}
-                  </blockquote>
-                  <p className="mt-2 text-sm">{theme.recommendation}</p>
-                </li>
-              ))}
-            </ul>
+            {Array.isArray(themes.data.themes) && themes.data.themes.length > 0 ? (
+              <ul className="flex flex-col gap-3">
+                {themes.data.themes.map((theme) => (
+                  <li key={theme.theme} className="rounded-md border border-[var(--border)] p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{theme.theme}</p>
+                      <Badge
+                        tone={
+                          theme.sentiment === "NEGATIVE"
+                            ? "critical"
+                            : theme.sentiment === "POSITIVE"
+                              ? "good"
+                              : "neutral"
+                        }
+                      >
+                        {theme.sentiment}
+                      </Badge>
+                      <Badge>{theme.mentionCount} mentions</Badge>
+                      <Badge tone={theme.severity === "HIGH" || theme.severity === "CRITICAL" ? "critical" : "neutral"}>
+                        {theme.severity}
+                      </Badge>
+                    </div>
+                    <blockquote className="mt-2 border-l-2 border-[var(--border-strong)] pl-3 text-xs italic text-[var(--text-secondary)]">
+                      {theme.exampleQuote}
+                    </blockquote>
+                    <p className="mt-2 text-sm">{theme.recommendation}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

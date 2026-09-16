@@ -332,12 +332,262 @@ async function generateGeminiStructured<T extends z.ZodTypeAny>(
     throw new Error(`Failed to parse JSON response from Gemini: ${(err as Error).message}`);
   }
 
-  if (parsed && typeof parsed === "object") {
-    const p = parsed as Record<string, unknown>;
-    if (Array.isArray(p.avoid)) {
-      p.avoid = p.avoid.map((item) =>
-        typeof item === "string" ? { term: item, reason: "Too competitive or off-intent" } : item,
-      );
+  // 1. Unwrap outer container key if Gemini wrapped the object (e.g. { keywordStrategy: { ... } } or { data: { ... } })
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const keys = Object.keys(parsed);
+    if (keys.length === 1) {
+      const singleKey = keys[0]!;
+      const inner = (parsed as Record<string, unknown>)[singleKey];
+      const rawProps = (rawSchema as { properties?: Record<string, unknown> })?.properties;
+      if (rawProps && !(singleKey in rawProps) && inner && typeof inner === "object") {
+        parsed = inner;
+      } else if (!rawProps && inner && typeof inner === "object") {
+        parsed = inner;
+      }
+    }
+  }
+
+  // 2. Normalization and fallback defaults for schema fields
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const p = parsed as Record<string, any>;
+
+    // Keyword Strategy
+    if ("keywords" in p || "avoid" in p || typeof p.summary === "string") {
+      p.summary = typeof p.summary === "string" ? p.summary : "";
+      if (!Array.isArray(p.keywords)) {
+        p.keywords = [];
+      } else {
+        const validIntents = ["brand", "category", "competitor", "feature", "long-tail"];
+        const validPriorities = ["high", "medium", "low"];
+        const validPlacements = ["title", "subtitle", "keyword_field", "short_description", "long_description"];
+
+        p.keywords = p.keywords
+          .map((k: any) => {
+            if (!k || typeof k !== "object") return null;
+            const intentNorm = String(k.intent || "").toLowerCase().replace(/_/g, "-");
+            const priorityNorm = String(k.priority || "").toLowerCase();
+            const placementNorm = String(k.placement || "").toLowerCase().replace(/-/g, "_");
+
+            return {
+              term: String(k.term || "").trim(),
+              intent: validIntents.includes(intentNorm) ? intentNorm : "feature",
+              rationale: String(k.rationale || "Relevant term for app positioning."),
+              priority: validPriorities.includes(priorityNorm) ? priorityNorm : "medium",
+              placement: validPlacements.includes(placementNorm) ? placementNorm : "keyword_field",
+            };
+          })
+          .filter((k: any) => k && k.term);
+      }
+
+      if (!Array.isArray(p.avoid)) {
+        p.avoid = [];
+      } else {
+        p.avoid = p.avoid
+          .map((item: any) => {
+            if (typeof item === "string") {
+              return { term: item.trim(), reason: "Too competitive or off-intent" };
+            }
+            if (item && typeof item === "object") {
+              return {
+                term: String(item.term || "").trim(),
+                reason: String(item.reason || "Too competitive or off-intent"),
+              };
+            }
+            return null;
+          })
+          .filter((item: any) => item && item.term);
+      }
+    }
+
+    // Metadata Variants
+    if ("variants" in p || Array.isArray(p.variants)) {
+      if (!Array.isArray(p.variants)) {
+        p.variants = [];
+      } else {
+        const validFields = [
+          "TITLE",
+          "SUBTITLE",
+          "KEYWORDS",
+          "SHORT_DESCRIPTION",
+          "FULL_DESCRIPTION",
+          "PROMOTIONAL_TEXT",
+        ];
+        p.variants = p.variants
+          .map((v: any) => {
+            if (!v || typeof v !== "object") return null;
+            const fieldNorm = String(v.field || "").toUpperCase().replace(/[\s-]/g, "_");
+            const text = String(v.text || "").trim();
+            const targetKeywords = Array.isArray(v.targetKeywords)
+              ? v.targetKeywords.map((t: any) => String(t).trim()).filter(Boolean)
+              : typeof v.targetKeywords === "string" && v.targetKeywords.trim()
+                ? [v.targetKeywords.trim()]
+                : [];
+
+            return {
+              field: validFields.includes(fieldNorm) ? fieldNorm : "TITLE",
+              text,
+              charCount: typeof v.charCount === "number" ? v.charCount : text.length,
+              targetKeywords,
+              rationale: String(v.rationale || "Optimized variant for store visibility."),
+            };
+          })
+          .filter((v: any) => v && v.text);
+      }
+    }
+
+    // Review Themes
+    if ("themes" in p || (p.summary && "themes" in p)) {
+      p.summary = typeof p.summary === "string" ? p.summary : "";
+      if (!Array.isArray(p.themes)) {
+        p.themes = [];
+      } else {
+        const validSentiments = ["POSITIVE", "NEUTRAL", "NEGATIVE"];
+        const validSeverities = ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"];
+        p.themes = p.themes
+          .map((t: any) => {
+            if (!t || typeof t !== "object") return null;
+            const sentimentNorm = String(t.sentiment || "").toUpperCase();
+            const severityNorm = String(t.severity || "").toUpperCase();
+            return {
+              theme: String(t.theme || "General"),
+              sentiment: validSentiments.includes(sentimentNorm) ? sentimentNorm : "NEUTRAL",
+              mentionCount: typeof t.mentionCount === "number" && t.mentionCount > 0 ? t.mentionCount : 1,
+              severity: validSeverities.includes(severityNorm) ? severityNorm : "INFO",
+              exampleQuote: String(t.exampleQuote || ""),
+              recommendation: String(t.recommendation || ""),
+            };
+          })
+          .filter(Boolean);
+      }
+    }
+
+    // Screenshot Analysis
+    if ("screenshots" in p || "firstImpression" in p) {
+      p.summary = typeof p.summary === "string" ? p.summary : "";
+      p.firstImpression = typeof p.firstImpression === "string" ? p.firstImpression : "";
+      p.orderRationale = typeof p.orderRationale === "string" ? p.orderRationale : "";
+      if (!Array.isArray(p.screenshots)) p.screenshots = [];
+      if (!Array.isArray(p.suggestedOrder)) p.suggestedOrder = [];
+      if (!Array.isArray(p.recommendations)) p.recommendations = [];
+
+      p.screenshots = p.screenshots
+        .map((s: any, idx: number) => {
+          if (!s || typeof s !== "object") return null;
+          const validStrengths = ["strong", "adequate", "weak"];
+          const strengthNorm = String(s.strength || "").toLowerCase();
+          return {
+            position: typeof s.position === "number" ? s.position : idx + 1,
+            headline: String(s.headline || "none"),
+            readableOnAPhone: Boolean(s.readableOnAPhone),
+            communicates: String(s.communicates || ""),
+            issues: Array.isArray(s.issues) ? s.issues.map(String) : [],
+            strength: validStrengths.includes(strengthNorm) ? strengthNorm : "adequate",
+          };
+        })
+        .filter(Boolean);
+
+      const validPriorities = ["high", "medium", "low"];
+      p.recommendations = p.recommendations
+        .map((r: any) => {
+          if (!r || typeof r !== "object") return null;
+          const priorityNorm = String(r.priority || "").toLowerCase();
+          return {
+            action: String(r.action || ""),
+            reason: String(r.reason || ""),
+            priority: validPriorities.includes(priorityNorm) ? priorityNorm : "medium",
+          };
+        })
+        .filter(Boolean);
+    }
+
+    // Recommendations
+    if ("recommendations" in p && Array.isArray(p.recommendations)) {
+      const validCats = [
+        "keywords",
+        "metadata",
+        "creatives",
+        "reviews",
+        "conversion",
+        "monetization",
+        "paid_acquisition",
+      ];
+      p.recommendations = p.recommendations
+        .map((r: any) => {
+          if (!r || typeof r !== "object") return null;
+          const catNorm = String(r.category || "").toLowerCase().replace(/[\s-]/g, "_");
+          const impact = typeof r.impact === "number" ? Math.min(5, Math.max(1, Math.round(r.impact))) : 3;
+          const effort = typeof r.effort === "number" ? Math.min(5, Math.max(1, Math.round(r.effort))) : 3;
+
+          let actions = Array.isArray(r.actions) ? r.actions : [];
+          actions = actions
+            .map((a: any) => {
+              if (typeof a === "string") return { step: "Action", detail: a };
+              if (a && typeof a === "object") return { step: String(a.step || "Action"), detail: String(a.detail || "") };
+              return null;
+            })
+            .filter(Boolean);
+
+          if (actions.length === 0) {
+            actions = [{ step: "Next step", detail: "Review and apply this recommendation." }];
+          }
+
+          return {
+            category: validCats.includes(catNorm) ? catNorm : "metadata",
+            title: String(r.title || "Optimization opportunity"),
+            rationale: String(r.rationale || ""),
+            impact,
+            effort,
+            actions,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    // Review Analysis
+    if ("sentiment" in p && ("topics" in p || "isActionable" in p)) {
+      const validSentiments = ["POSITIVE", "NEUTRAL", "NEGATIVE"];
+      const sentimentNorm = String(p.sentiment || "").toUpperCase();
+      p.sentiment = validSentiments.includes(sentimentNorm) ? sentimentNorm : "NEUTRAL";
+      p.topics = Array.isArray(p.topics) ? p.topics.map(String) : [];
+      p.isActionable = Boolean(p.isActionable);
+    }
+
+    // Review Reply
+    if ("reply" in p || "tone" in p) {
+      const reply = String(p.reply || "").trim();
+      p.reply = reply;
+      p.charCount = typeof p.charCount === "number" ? p.charCount : reply.length;
+      const validTones = ["apologetic", "helpful", "appreciative", "informative"];
+      const toneNorm = String(p.tone || "").toLowerCase();
+      p.tone = validTones.includes(toneNorm) ? toneNorm : "helpful";
+      p.addressesIssue = String(p.addressesIssue || "User feedback");
+      p.needsHumanReview = Boolean(p.needsHumanReview);
+    }
+
+    // Competitor Gap
+    if ("gaps" in p || "positioning" in p) {
+      p.summary = typeof p.summary === "string" ? p.summary : "";
+      p.positioning = typeof p.positioning === "string" ? p.positioning : "";
+      if (!Array.isArray(p.gaps)) {
+        p.gaps = [];
+      } else {
+        const validAreas = ["keywords", "creatives", "description", "ratings", "pricing", "features"];
+        const validImpacts = ["high", "medium", "low"];
+        p.gaps = p.gaps
+          .map((g: any) => {
+            if (!g || typeof g !== "object") return null;
+            const areaNorm = String(g.area || "").toLowerCase();
+            const impactNorm = String(g.impact || "").toLowerCase();
+            return {
+              area: validAreas.includes(areaNorm) ? areaNorm : "features",
+              finding: String(g.finding || ""),
+              competitorExample: String(g.competitorExample || ""),
+              action: String(g.action || ""),
+              impact: validImpacts.includes(impactNorm) ? impactNorm : "medium",
+            };
+          })
+          .filter(Boolean);
+      }
     }
   }
 

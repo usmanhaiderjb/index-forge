@@ -123,6 +123,9 @@ export const aiRouter = createTRPCRouter({
       await guard(ctx.organizationId, "keyword-strategy");
 
       const { data, model } = await generateKeywordStrategy(ctx.organizationId, input.appId);
+      const keywords = Array.isArray(data?.keywords) ? data.keywords : [];
+      const avoid = Array.isArray(data?.avoid) ? data.avoid : [];
+      const summary = data?.summary ?? "";
 
       await ctx.db.aiInsight.create({
         data: {
@@ -130,9 +133,9 @@ export const aiRouter = createTRPCRouter({
           appId: input.appId,
           type: "KEYWORD_OPPORTUNITY",
           severity: "INFO",
-          title: `Keyword strategy — ${data.keywords.length} terms proposed`,
-          summary: data.summary,
-          detail: data.keywords
+          title: `Keyword strategy — ${keywords.length} terms proposed`,
+          summary: summary,
+          detail: keywords
             .map(
               (k) =>
                 `- **${k.term}** (${k.intent}, ${k.priority}) → ${k.placement}\n  ${k.rationale}`,
@@ -143,7 +146,12 @@ export const aiRouter = createTRPCRouter({
         },
       });
 
-      return data;
+      return {
+        ...data,
+        summary,
+        keywords,
+        avoid,
+      };
     }),
 
   metadataVariants: memberProcedure
@@ -173,6 +181,7 @@ export const aiRouter = createTRPCRouter({
         storefront,
       });
 
+      const rawVariants = Array.isArray(data?.variants) ? data.variants : [];
       const limits = FIELD_LIMITS[app.platform];
       const listing = await ctx.db.storeListing.findFirst({
         where: {
@@ -184,12 +193,17 @@ export const aiRouter = createTRPCRouter({
 
       // The model is told the limits, but a suggestion one character over is
       // still rejected here rather than shown to the user as valid.
-      const variants = data.variants
+      const variants = rawVariants
         .filter((v) => {
           const limit = limits[v.field];
-          return limit !== undefined && v.text.length <= limit;
+          return limit !== undefined && v.text && v.text.length <= limit;
         })
-        .map((v) => ({ ...v, charCount: v.text.length, charLimit: limits[v.field]! }));
+        .map((v) => ({
+          ...v,
+          charCount: v.text.length,
+          charLimit: limits[v.field]!,
+          targetKeywords: Array.isArray(v.targetKeywords) ? v.targetKeywords : [],
+        }));
 
       if (input.persist && variants.length > 0) {
         await ctx.db.metadataSuggestion.createMany({
@@ -200,7 +214,7 @@ export const aiRouter = createTRPCRouter({
             current: currentFieldValue(v.field, listing),
             suggested: v.text,
             rationale: v.rationale,
-            targetKeywords: v.targetKeywords,
+            targetKeywords: Array.isArray(v.targetKeywords) ? v.targetKeywords : [],
             charCount: v.charCount,
             charLimit: v.charLimit,
             model,
@@ -210,7 +224,7 @@ export const aiRouter = createTRPCRouter({
 
       return {
         variants,
-        rejected: data.variants.length - variants.length,
+        rejected: rawVariants.length - variants.length,
       };
     }),
 
@@ -218,7 +232,7 @@ export const aiRouter = createTRPCRouter({
     .input(z.object({ appId: z.string().cuid(), field: z.nativeEnum(ListingField).optional() }))
     .query(async ({ ctx, input }) => {
       await assertAppInOrg(ctx.db, input.appId, ctx.organizationId);
-      return ctx.db.metadataSuggestion.findMany({
+      const rows = await ctx.db.metadataSuggestion.findMany({
         where: {
           appId: input.appId,
           ...(input.field ? { field: input.field } : {}),
@@ -227,6 +241,10 @@ export const aiRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
         take: 60,
       });
+      return rows.map((r) => ({
+        ...r,
+        targetKeywords: Array.isArray(r.targetKeywords) ? r.targetKeywords : [],
+      }));
     }),
 
   setSuggestionStatus: memberProcedure
@@ -299,7 +317,10 @@ export const aiRouter = createTRPCRouter({
         storefront,
       );
 
-      const weak = data.screenshots.filter((s) => s.strength === "weak").length;
+      const screenshots = Array.isArray(data?.screenshots) ? data.screenshots : [];
+      const suggestedOrder = Array.isArray(data?.suggestedOrder) ? data.suggestedOrder : [];
+      const recommendations = Array.isArray(data?.recommendations) ? data.recommendations : [];
+      const weak = screenshots.filter((s) => s.strength === "weak").length;
 
       await ctx.db.aiInsight.create({
         data: {
@@ -307,27 +328,27 @@ export const aiRouter = createTRPCRouter({
           appId: input.appId,
           type: "METADATA_GAP",
           severity: weak >= 2 ? "MEDIUM" : "INFO",
-          title: `Screenshot review — ${weak} of ${data.screenshots.length} need work`,
-          summary: data.summary,
+          title: `Screenshot review — ${weak} of ${screenshots.length} need work`,
+          summary: data?.summary ?? "",
           detail: [
-            `**First impression:** ${data.firstImpression}`,
+            `**First impression:** ${data?.firstImpression ?? ""}`,
             "",
-            ...data.screenshots.map(
+            ...screenshots.map(
               (s) =>
                 `### ${s.position}. ${s.headline} (${s.strength})\n${s.communicates}${
-                  s.issues.length ? `\n\n- ${s.issues.join("\n- ")}` : ""
+                  Array.isArray(s.issues) && s.issues.length ? `\n\n- ${s.issues.join("\n- ")}` : ""
                 }`,
             ),
             "",
-            `**Suggested order:** ${data.suggestedOrder.join(" → ")}`,
-            data.orderRationale,
+            `**Suggested order:** ${suggestedOrder.join(" → ")}`,
+            data?.orderRationale ?? "",
           ].join("\n"),
           evidence: { ...data, analyzedUrls } as never,
           model,
         },
       });
 
-      return { ...data, analyzedUrls, totalCount };
+      return { ...data, screenshots, suggestedOrder, recommendations, analyzedUrls, totalCount };
     }),
 
   reviewThemes: memberProcedure
@@ -336,7 +357,10 @@ export const aiRouter = createTRPCRouter({
       await assertAppInOrg(ctx.db, input.appId, ctx.organizationId);
       await guard(ctx.organizationId, "review-themes");
       const { data } = await summarizeReviewThemes(ctx.organizationId, input.appId, input.days);
-      return data;
+      return {
+        ...data,
+        themes: Array.isArray(data?.themes) ? data.themes : [],
+      };
     }),
 
   competitorGap: memberProcedure
@@ -346,16 +370,17 @@ export const aiRouter = createTRPCRouter({
       await guard(ctx.organizationId, "competitor-gap");
 
       const { data, model } = await analyzeCompetitorGap(ctx.organizationId, input.appId);
+      const gaps = Array.isArray(data?.gaps) ? data.gaps : [];
 
       await ctx.db.aiInsight.create({
         data: {
           organizationId: ctx.organizationId,
           appId: input.appId,
           type: "COMPETITOR_MOVE",
-          severity: data.gaps.some((g) => g.impact === "high") ? "MEDIUM" : "INFO",
-          title: `Competitor gap analysis — ${data.gaps.length} findings`,
-          summary: data.summary,
-          detail: data.gaps
+          severity: gaps.some((g) => g.impact === "high") ? "MEDIUM" : "INFO",
+          title: `Competitor gap analysis — ${gaps.length} findings`,
+          summary: data?.summary ?? "",
+          detail: gaps
             .map((g) => `### ${g.area} (${g.impact})\n${g.finding}\n\n> ${g.competitorExample}\n\n**Action:** ${g.action}`)
             .join("\n\n"),
           evidence: data as never,
@@ -363,7 +388,10 @@ export const aiRouter = createTRPCRouter({
         },
       });
 
-      return data;
+      return {
+        ...data,
+        gaps,
+      };
     }),
 
   refreshRecommendations: memberProcedure

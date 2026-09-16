@@ -169,23 +169,25 @@ export function CompetitorsView({ appId }: { appId: string }) {
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-[var(--text-secondary)]">{analyze.data.summary}</p>
             <p className="rounded-md bg-[var(--page)] p-3 text-sm">{analyze.data.positioning}</p>
-            <ul className="flex flex-col gap-3">
-              {analyze.data.gaps.map((gap, i) => (
-                <li key={i} className="rounded-md border border-[var(--border)] p-3">
-                  <div className="flex items-center gap-2">
-                    <Badge tone="accent">{gap.area}</Badge>
-                    <Badge tone={gap.impact === "high" ? "critical" : gap.impact === "medium" ? "warning" : "neutral"}>
-                      {gap.impact} impact
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-sm">{gap.finding}</p>
-                  <blockquote className="mt-2 border-l-2 border-[var(--border-strong)] pl-3 text-xs italic text-[var(--text-secondary)]">
-                    {gap.competitorExample}
-                  </blockquote>
-                  <p className="mt-2 text-sm font-medium">{gap.action}</p>
-                </li>
-              ))}
-            </ul>
+            {Array.isArray(analyze.data.gaps) && analyze.data.gaps.length > 0 ? (
+              <ul className="flex flex-col gap-3">
+                {analyze.data.gaps.map((gap, i) => (
+                  <li key={i} className="rounded-md border border-[var(--border)] p-3">
+                    <div className="flex items-center gap-2">
+                      <Badge tone="accent">{gap.area}</Badge>
+                      <Badge tone={gap.impact === "high" ? "critical" : gap.impact === "medium" ? "warning" : "neutral"}>
+                        {gap.impact} impact
+                      </Badge>
+                    </div>
+                    <p className="mt-2 text-sm">{gap.finding}</p>
+                    <blockquote className="mt-2 border-l-2 border-[var(--border-strong)] pl-3 text-xs italic text-[var(--text-secondary)]">
+                      {gap.competitorExample}
+                    </blockquote>
+                    <p className="mt-2 text-sm font-medium">{gap.action}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

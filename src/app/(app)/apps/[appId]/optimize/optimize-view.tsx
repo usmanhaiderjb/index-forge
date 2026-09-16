@@ -29,10 +29,12 @@ export function OptimizeView({ appId }: { appId: string }) {
 
   const metadata = api.ai.metadataVariants.useMutation({
     onSuccess: async (result) => {
+      const count = result?.variants?.length ?? 0;
+      const rejected = result?.rejected ?? 0;
       toast.success(
-        result.rejected > 0
-          ? `${result.variants.length} variants — ${result.rejected} rejected for exceeding the character limit`
-          : `${result.variants.length} variants generated`,
+        rejected > 0
+          ? `${count} variants — ${rejected} rejected for exceeding the character limit`
+          : `${count} variants generated`,
       );
       await utils.ai.suggestions.invalidate({ appId });
     },
@@ -111,35 +113,37 @@ export function OptimizeView({ appId }: { appId: string }) {
           <CardContent className="flex flex-col gap-4">
             <p className="text-sm text-[var(--text-secondary)]">{strategy.data.summary}</p>
 
-            <ul className="flex flex-col gap-2">
-              {strategy.data.keywords.map((keyword) => (
-                <li
-                  key={keyword.term}
-                  className="flex flex-wrap items-start gap-2 rounded-md border border-[var(--border)] p-3"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium">{keyword.term}</p>
-                      <Badge tone={keyword.priority === "high" ? "good" : "neutral"}>
-                        {keyword.priority}
-                      </Badge>
-                      <Badge tone="accent">{keyword.intent}</Badge>
-                      <Badge>{keyword.placement.replace(/_/g, " ")}</Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-[var(--text-secondary)]">{keyword.rationale}</p>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => addKeyword.mutate({ appId, terms: [keyword.term], source: "AI" })}
+            {Array.isArray(strategy.data.keywords) && strategy.data.keywords.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {strategy.data.keywords.map((keyword) => (
+                  <li
+                    key={keyword.term}
+                    className="flex flex-wrap items-start gap-2 rounded-md border border-[var(--border)] p-3"
                   >
-                    Track
-                  </Button>
-                </li>
-              ))}
-            </ul>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium">{keyword.term}</p>
+                        <Badge tone={keyword.priority === "high" ? "good" : "neutral"}>
+                          {keyword.priority}
+                        </Badge>
+                        <Badge tone="accent">{keyword.intent}</Badge>
+                        <Badge>{keyword.placement.replace(/_/g, " ")}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">{keyword.rationale}</p>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => addKeyword.mutate({ appId, terms: [keyword.term], source: "AI" })}
+                    >
+                      Track
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
-            {strategy.data.avoid.length ? (
+            {Array.isArray(strategy.data.avoid) && strategy.data.avoid.length > 0 ? (
               <div>
                 <p className="text-sm font-medium">Not worth chasing</p>
                 <ul className="mt-1.5 flex flex-col gap-1">
@@ -169,7 +173,7 @@ export function OptimizeView({ appId }: { appId: string }) {
         <CardContent>
           {suggestions.isLoading ? (
             <Skeleton className="h-32 w-full" />
-          ) : suggestions.data?.length ? (
+          ) : Array.isArray(suggestions.data) && suggestions.data.length > 0 ? (
             <ul className="flex flex-col gap-3">
               {suggestions.data.map((suggestion) => (
                 <li key={suggestion.id} className="rounded-md border border-[var(--border)] p-3">
@@ -245,7 +249,7 @@ export function OptimizeView({ appId }: { appId: string }) {
                       {suggestion.rationale}
                     </p>
                   ) : null}
-                  {suggestion.targetKeywords.length ? (
+                  {Array.isArray(suggestion.targetKeywords) && suggestion.targetKeywords.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {suggestion.targetKeywords.map((term) => (
                         <Badge key={term}>{term}</Badge>
@@ -270,7 +274,7 @@ export function OptimizeView({ appId }: { appId: string }) {
         <CardContent>
           {recommendations.isLoading ? (
             <Skeleton className="h-32 w-full" />
-          ) : recommendations.data?.length ? (
+          ) : Array.isArray(recommendations.data) && recommendations.data.length > 0 ? (
             <ul className="flex flex-col gap-3">
               {recommendations.data.map((rec) => (
                 <li key={rec.id} className="rounded-md border border-[var(--border)] p-3">

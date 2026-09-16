@@ -36,7 +36,7 @@ export function CreativesView({ appId }: { appId: string }) {
   });
 
   const byPosition = new Map(
-    (analyze.data?.screenshots ?? []).map((s) => [s.position, s]),
+    (Array.isArray(analyze.data?.screenshots) ? analyze.data.screenshots : []).map((s) => [s.position, s]),
   );
 
   const totalShots = screenshots.data?.urls.length ?? 0;
@@ -136,9 +136,10 @@ export function CreativesView({ appId }: { appId: string }) {
             <p className="text-sm">{analyze.data.firstImpression}</p>
             <p className="text-sm text-[var(--text-secondary)]">{analyze.data.summary}</p>
 
-            {analyze.data.suggestedOrder.length > 0 &&
+            {Array.isArray(analyze.data.suggestedOrder) &&
+            analyze.data.suggestedOrder.length > 0 &&
             analyze.data.suggestedOrder.join() !==
-              analyze.data.screenshots.map((s) => s.position).join() ? (
+              (Array.isArray(analyze.data.screenshots) ? analyze.data.screenshots : []).map((s) => s.position).join() ? (
               <div className="rounded-md border border-[var(--border)] p-3">
                 <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
                   Suggested Order
@@ -157,7 +158,7 @@ export function CreativesView({ appId }: { appId: string }) {
               </div>
             ) : null}
 
-            {analyze.data.recommendations.length ? (
+            {Array.isArray(analyze.data.recommendations) && analyze.data.recommendations.length > 0 ? (
               <ul className="flex flex-col gap-2">
                 {analyze.data.recommendations.map((rec, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
