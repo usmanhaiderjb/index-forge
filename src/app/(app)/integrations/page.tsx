@@ -615,6 +615,15 @@ function ResourceLinker({
                               {resource.platform}
                             </Badge>
                           ) : null}
+                          {resource.metadata?.analyticsPropertyId ? (
+                            <Badge tone="good" className="text-[10px] font-mono px-1.5 py-0">
+                              GA4: {String(resource.metadata.analyticsPropertyId)}
+                            </Badge>
+                          ) : (
+                            <Badge tone="warning" className="text-[10px] px-1.5 py-0">
+                              No GA4 in Firebase
+                            </Badge>
+                          )}
                           {isLinked ? (
                             <Badge tone="good" className="text-xs flex items-center gap-1">
                               <CheckCircle2 className="size-3" />
@@ -636,6 +645,11 @@ function ResourceLinker({
                           {resource.metadata?.projectId ? (
                             <span className="text-[var(--text-muted)] text-[11px]">
                               Project: <strong className="font-normal text-[var(--text-secondary)]">{String(resource.metadata.projectId)}</strong>
+                            </span>
+                          ) : null}
+                          {!resource.metadata?.analyticsPropertyId ? (
+                            <span className="text-[var(--status-warning)] text-[10px]">
+                              (Enable Google Analytics in Firebase Console to collect user numbers)
                             </span>
                           ) : null}
                         </div>

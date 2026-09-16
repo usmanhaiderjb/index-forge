@@ -90,48 +90,29 @@ async function listFirebaseProjects(
   return out;
 }
 
-/**
- * GA4 properties are discovered separately from Firebase projects. A Firebase
- * project's analytics property carries `analyticsPropertyId` on the
- * googleAnalyticsDetails endpoint, but that endpoint is not always readable,
- * so we fall back to matching property display names.
- */
-async function findAnalyticsProperty(
+async function listAllGaProperties(
   connectionId: string,
   credentials: GoogleCredentials,
-  project: FirebaseProject,
-): Promise<string | undefined> {
-  try {
-    const details = await googleApiFetch<{
-      analyticsProperty?: { id?: string; displayName?: string };
-    }>({
-      connectionId,
-      credentials,
-      url: `${FIREBASE_API}/projects/${project.projectId}:analyticsDetails`,
-    });
-    if (details.analyticsProperty?.id) return details.analyticsProperty.id;
-  } catch {
-    // Falls through to account-summary matching below.
-  }
-
+): Promise<{ propertyId: string; displayName: string }[]> {
   try {
     const summaries = await googleApiFetch<{ accountSummaries?: GaAccountSummary[] }>({
       connectionId,
       credentials,
       url: `${GA_ADMIN_API}/accountSummaries?pageSize=200`,
     });
+    const list: { propertyId: string; displayName: string }[] = [];
     for (const account of summaries.accountSummaries ?? []) {
       for (const property of account.propertySummaries ?? []) {
-        const wanted = (project.displayName ?? project.projectId).toLowerCase();
-        if (property.displayName.toLowerCase().includes(wanted)) {
-          return property.property.replace("properties/", "");
-        }
+        list.push({
+          propertyId: property.property.replace("properties/", ""),
+          displayName: property.displayName,
+        });
       }
     }
+    return list;
   } catch {
-    return undefined;
+    return [];
   }
-  return undefined;
 }
 
 type GaDataStream = {
@@ -277,78 +258,98 @@ export const firebaseConnector: Connector = {
   async listResources(credentials, connection): Promise<RemoteResource[]> {
     if (credentials.kind !== "google-oauth") return [];
 
-    const projects = await listFirebaseProjects(connection.id, credentials);
+    const [projects, gaProperties] = await Promise.all([
+      listFirebaseProjects(connection.id, credentials),
+      listAllGaProperties(connection.id, credentials),
+    ]);
+
     const resources: RemoteResource[] = [];
 
-    for (const project of projects) {
-      const propertyId = await findAnalyticsProperty(connection.id, credentials, project);
+    await Promise.all(
+      projects.map(async (project) => {
+        const pIdNorm = project.projectId.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const pDisplayNorm = (project.displayName ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-      // One lookup per project, not per app.
-      const streams = propertyId
-        ? await googleApiFetch<{ dataStreams?: GaDataStream[] }>({
+        const matchedGa = gaProperties.find((ga) => {
+          const gaNorm = ga.displayName.toLowerCase().replace(/[^a-z0-9]/g, "");
+          return (
+            gaNorm === pIdNorm ||
+            (pDisplayNorm && gaNorm === pDisplayNorm) ||
+            gaNorm.includes(pIdNorm) ||
+            pIdNorm.includes(gaNorm) ||
+            (pDisplayNorm && (gaNorm.includes(pDisplayNorm) || pDisplayNorm.includes(gaNorm)))
+          );
+        });
+
+        const propertyId = matchedGa?.propertyId;
+
+        const [streams, android, ios] = await Promise.all([
+          propertyId
+            ? googleApiFetch<{ dataStreams?: GaDataStream[] }>({
+                connectionId: connection.id,
+                credentials,
+                url: `${GA_ADMIN_API}/properties/${propertyId}/dataStreams?pageSize=200`,
+              })
+                .then((r) => r.dataStreams ?? [])
+                .catch(() => [] as GaDataStream[])
+            : Promise.resolve([] as GaDataStream[]),
+          googleApiFetch<{ apps?: FirebaseAndroidApp[] }>({
             connectionId: connection.id,
             credentials,
-            url: `${GA_ADMIN_API}/properties/${propertyId}/dataStreams?pageSize=200`,
-          })
-            .then((r) => r.dataStreams ?? [])
-            .catch(() => [] as GaDataStream[])
-        : [];
+            url: `${FIREBASE_API}/projects/${project.projectId}/androidApps?pageSize=100`,
+          }).catch(() => ({ apps: [] as FirebaseAndroidApp[] })),
+          googleApiFetch<{ apps?: FirebaseIosApp[] }>({
+            connectionId: connection.id,
+            credentials,
+            url: `${FIREBASE_API}/projects/${project.projectId}/iosApps?pageSize=100`,
+          }).catch(() => ({ apps: [] as FirebaseIosApp[] })),
+        ]);
 
-      const streamIdFor = (firebaseAppId: string) =>
-        streams
-          .find(
-            (s) =>
-              s.androidAppStreamData?.firebaseAppId === firebaseAppId ||
-              s.iosAppStreamData?.firebaseAppId === firebaseAppId,
-          )
-          ?.name.split("/")
-          .pop();
+        const streamIdFor = (firebaseAppId: string) =>
+          streams
+            .find(
+              (s) =>
+                s.androidAppStreamData?.firebaseAppId === firebaseAppId ||
+                s.iosAppStreamData?.firebaseAppId === firebaseAppId,
+            )
+            ?.name.split("/")
+            .pop();
 
-      const [android, ios] = await Promise.all([
-        googleApiFetch<{ apps?: FirebaseAndroidApp[] }>({
-          connectionId: connection.id,
-          credentials,
-          url: `${FIREBASE_API}/projects/${project.projectId}/androidApps?pageSize=100`,
-        }).catch(() => ({ apps: [] as FirebaseAndroidApp[] })),
-        googleApiFetch<{ apps?: FirebaseIosApp[] }>({
-          connectionId: connection.id,
-          credentials,
-          url: `${FIREBASE_API}/projects/${project.projectId}/iosApps?pageSize=100`,
-        }).catch(() => ({ apps: [] as FirebaseIosApp[] })),
-      ]);
+        for (const app of android.apps ?? []) {
+          resources.push({
+            externalId: app.appId,
+            externalRef: propertyId,
+            name: app.displayName ?? app.packageName,
+            platform: "ANDROID",
+            storeId: app.packageName,
+            bundleId: app.packageName,
+            metadata: {
+              projectId: project.projectId,
+              analyticsPropertyId: propertyId,
+              streamId: streamIdFor(app.appId),
+              gaLinked: Boolean(propertyId),
+            },
+          });
+        }
 
-      for (const app of android.apps ?? []) {
-        resources.push({
-          externalId: app.appId,
-          externalRef: propertyId,
-          name: app.displayName ?? app.packageName,
-          platform: "ANDROID",
-          storeId: app.packageName,
-          bundleId: app.packageName,
-          metadata: {
-            projectId: project.projectId,
-            analyticsPropertyId: propertyId,
-            streamId: streamIdFor(app.appId),
-          },
-        });
-      }
-
-      for (const app of ios.apps ?? []) {
-        resources.push({
-          externalId: app.appId,
-          externalRef: propertyId,
-          name: app.displayName ?? app.bundleId,
-          platform: "IOS",
-          storeId: app.appStoreId,
-          bundleId: app.bundleId,
-          metadata: {
-            projectId: project.projectId,
-            analyticsPropertyId: propertyId,
-            streamId: streamIdFor(app.appId),
-          },
-        });
-      }
-    }
+        for (const app of ios.apps ?? []) {
+          resources.push({
+            externalId: app.appId,
+            externalRef: propertyId,
+            name: app.displayName ?? app.bundleId,
+            platform: "IOS",
+            storeId: app.appStoreId,
+            bundleId: app.bundleId,
+            metadata: {
+              projectId: project.projectId,
+              analyticsPropertyId: propertyId,
+              streamId: streamIdFor(app.appId),
+              gaLinked: Boolean(propertyId),
+            },
+          });
+        }
+      }),
+    );
 
     return resources;
   },

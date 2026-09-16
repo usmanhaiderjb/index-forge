@@ -50,7 +50,6 @@ export async function syncConnection(connectionId: string, days = 30) {
           failures.push(
             `${link.app.name}: ${error instanceof Error ? error.message : String(error)}`,
           );
-          await recordConnectionError(connectionId, error);
         }
 
         if (connector.fetchReviews) {
@@ -66,11 +65,15 @@ export async function syncConnection(connectionId: string, days = 30) {
         }
       }
 
+      const hasSuccess = record.wroteCount > 0 || failures.length < connection.resourceLinks.length;
+
       await db.connection.update({
         where: { id: connectionId },
         data: {
           lastSyncedAt: new Date(),
-          ...(failures.length === 0 ? { status: "ACTIVE", lastError: null, errorCount: 0 } : {}),
+          status: "ACTIVE",
+          lastError: failures.length > 0 ? failures.join("; ").slice(0, 2000) : null,
+          errorCount: hasSuccess ? 0 : { increment: 1 },
         },
       });
 
