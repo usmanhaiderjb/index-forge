@@ -25,6 +25,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
 
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -41,11 +52,18 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      - name: Verify Environment Secrets
+        run: |
+          if [ -z "${{ secrets.DATABASE_URL }}" ]; then
+            echo "::error ::DATABASE_URL secret is missing! Please go to GitHub Repo -> Settings -> Secrets and variables -> Actions -> New repository secret and add DATABASE_URL."
+            exit 1
+          fi
+
       - name: Run Corpus Growth
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL || secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL || 'redis://localhost:6379' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NODE_ENV: production
@@ -55,5 +73,5 @@ jobs:
           COUNTRY="${{ github.event.inputs.country || 'us' }}"
           DURATION="${{ github.event.inputs.run_duration || '45m' }}"
           echo "Starting corpus growth for country: $COUNTRY (Duration: $DURATION)"
-          timeout $DURATION npx tsx --env-file-if-exists=.env scripts/grow.ts --country=$COUNTRY || true
-          echo "Growth cycle finished successfully."
+          timeout $DURATION npx tsx --require ./scripts/allow-server-modules.cjs --env-file-if-exists=.env scripts/grow.ts --country=$COUNTRY || true
+          echo "Growth cycle completed."
