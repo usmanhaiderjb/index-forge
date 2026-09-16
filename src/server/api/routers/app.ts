@@ -10,6 +10,7 @@ import { listingChanges } from "@/server/aso/impact";
 import { getAsoProvider } from "@/server/aso/provider";
 import { appStorefronts } from "@/server/jobs/handlers/aso";
 import { enqueue } from "@/server/jobs/queues";
+import { detectStoreInput } from "@/lib/store-detect";
 
 const platformSchema = z.enum(["IOS", "ANDROID"]);
 
@@ -65,11 +66,66 @@ export const appRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       const provider = await getAsoProvider();
-      return provider.search(input.platform, input.term, {
-        country: input.country,
+      const detected = detectStoreInput(input.term);
+      const targetPlatform = detected.platform ?? input.platform;
+      const targetCountry = detected.country ?? input.country;
+      const cleanStoreId = detected.storeId;
+
+      // If user pasted a store URL or exact package/app ID, fetch exact app detail directly
+      if (cleanStoreId) {
+        try {
+          const direct = await provider.getApp(targetPlatform, cleanStoreId, {
+            country: targetCountry,
+            locale: "en-US",
+          });
+          if (direct) {
+            return [
+              {
+                position: 1,
+                storeId: direct.storeId,
+                name: direct.name,
+                developer: direct.developer,
+                iconUrl: direct.iconUrl,
+                ratingAverage: direct.ratingAverage,
+                ratingCount: direct.ratingCount,
+              },
+            ];
+          }
+        } catch {
+          // fallback to search
+        }
+      }
+
+      const results = await provider.search(targetPlatform, input.term, {
+        country: targetCountry,
         locale: "en-US",
         limit: 20,
       });
+
+      // Enrich top result with full details if icon or title is missing
+      if (results.length > 0 && results[0] && (!results[0].iconUrl || results[0].name === results[0].storeId)) {
+        try {
+          const topApp = await provider.getApp(targetPlatform, results[0].storeId, {
+            country: targetCountry,
+            locale: "en-US",
+          });
+          if (topApp) {
+            results[0] = {
+              position: 1,
+              storeId: topApp.storeId,
+              name: topApp.name,
+              developer: topApp.developer ?? results[0].developer,
+              iconUrl: topApp.iconUrl ?? results[0].iconUrl,
+              ratingAverage: topApp.ratingAverage ?? results[0].ratingAverage,
+              ratingCount: topApp.ratingCount ?? results[0].ratingCount,
+            };
+          }
+        } catch {
+          // ignore enrichment failure
+        }
+      }
+
+      return results;
     }),
 
   preview: orgProcedure
