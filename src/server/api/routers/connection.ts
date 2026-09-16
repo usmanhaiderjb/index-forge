@@ -302,7 +302,7 @@ export const connectionRouter = createTRPCRouter({
       await assertConnection(ctx.db, input.connectionId, ctx.organizationId);
       await enqueue(
         { type: "connection.sync", connectionId: input.connectionId, days: input.days },
-        { jobId: `connection.sync:${input.connectionId}:${Date.now()}` },
+        { jobId: `connection.sync-${input.connectionId}-${Date.now()}` },
       );
       return { queued: true };
     }),

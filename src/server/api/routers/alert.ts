@@ -145,7 +145,7 @@ export const alertRouter = createTRPCRouter({
   evaluateNow: memberProcedure.mutation(async ({ ctx }) => {
     await enqueue(
       { type: "alerts.evaluate", organizationId: ctx.organizationId },
-      { jobId: `alerts.evaluate:${ctx.organizationId}:${Date.now()}` },
+      { jobId: `alerts.evaluate-${ctx.organizationId}-${Date.now()}` },
     );
     return { queued: true };
   }),

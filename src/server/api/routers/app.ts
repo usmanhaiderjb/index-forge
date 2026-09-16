@@ -291,7 +291,7 @@ export const appRouter = createTRPCRouter({
 
       await enqueue(
         { type: "app.listing", appId: input.appId },
-        { jobId: `app.listing:${input.appId}:${Date.now()}` },
+        { jobId: `app.listing-${input.appId}-${Date.now()}` },
       );
 
       return created;

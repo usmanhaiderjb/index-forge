@@ -76,7 +76,7 @@ export async function dispatchDueDigests(now = new Date()) {
 
     await enqueue(
       { type: "digest.send", digestId: digest.id },
-      { jobId: `digest.send:${digest.id}:${now.toISOString().slice(0, 13)}` },
+      { jobId: `digest.send-${digest.id}-${now.toISOString().slice(0, 13).replace(/:/g, "-")}` },
     );
     queued++;
   }

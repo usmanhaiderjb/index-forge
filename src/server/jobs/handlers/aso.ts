@@ -522,7 +522,7 @@ export async function syncCompetitors(appId: string, opts: { discover?: boolean 
       // already ran an hour ago. Re-running it now backfills them immediately
       // rather than leaving the comparison blank until tomorrow.
       if (discovered > 0) {
-        await enqueue({ type: "app.ranks", appId }, { jobId: `app.ranks:${appId}:${Date.now()}` });
+        await enqueue({ type: "app.ranks", appId }, { jobId: `app.ranks-${appId}-${Date.now()}` });
       }
     }
 

@@ -79,7 +79,7 @@ export async function syncConnection(connectionId: string, days = 30) {
       for (const appId of new Set(connection.resourceLinks.map((link) => link.appId))) {
         await enqueue(
           { type: "app.derive", appId, days },
-          { jobId: `app.derive:${appId}:${Date.now()}` },
+          { jobId: `app.derive-${appId}-${Date.now()}` },
         );
       }
 

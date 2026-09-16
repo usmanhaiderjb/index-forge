@@ -382,7 +382,7 @@ export const aiRouter = createTRPCRouter({
       await assertAppInOrg(ctx.db, input.appId, ctx.organizationId);
       await enqueue(
         { type: "ai.insights", appId: input.appId },
-        { jobId: `ai.insights:${input.appId}:${Date.now()}` },
+        { jobId: `ai.insights-${input.appId}-${Date.now()}` },
       );
       return { queued: true };
     }),

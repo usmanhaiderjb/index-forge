@@ -68,11 +68,12 @@ export function getQueue(): Queue<JobData> {
  * queue the same work five times.
  */
 export async function enqueue(data: JobData, options: JobsOptions = {}) {
-  const key = jobKey(data);
+  const rawJobId = options.jobId ?? jobKey(data);
+  const jobId = rawJobId ? String(rawJobId).replace(/:/g, "-") : undefined;
   try {
     return await getQueue().add(data.type, data, {
       ...options,
-      jobId: options.jobId ?? key,
+      jobId,
     });
   } catch (error) {
     // ioredis reports an unreachable server as "Connection is closed", which
@@ -104,7 +105,7 @@ function jobKey(data: JobData): string {
   switch (data.type) {
     case "connection.sync":
     case "connection.discover":
-      return `${data.type}:${data.connectionId}`;
+      return `${data.type}-${data.connectionId}`;
     case "app.listing":
     case "app.ranks":
     case "app.charts":
@@ -112,23 +113,23 @@ function jobKey(data: JobData): string {
     case "app.reviews":
     case "app.competitors":
     case "ai.insights":
-      return `${data.type}:${data.appId}`;
+      return `${data.type}-${data.appId}`;
     case "review.classify":
-      return `${data.type}:${data.reviewId}`;
+      return `${data.type}-${data.reviewId}`;
     case "alerts.evaluate":
-      return `${data.type}:${data.organizationId ?? "all"}`;
+      return `${data.type}-${data.organizationId ?? "all"}`;
     case "alert.deliver":
-      return `${data.type}:${data.eventId}`;
+      return `${data.type}-${data.eventId}`;
     case "digest.send":
-      return `${data.type}:${data.digestId}`;
+      return `${data.type}-${data.digestId}`;
     case "push.send":
-      return `${data.type}:${data.campaignId}`;
+      return `${data.type}-${data.campaignId}`;
     case "corpus.crawl":
-      return `${data.type}:${data.platform}:${data.country}:${data.prefix}`;
+      return `${data.type}-${data.platform}-${data.country}-${data.prefix}`;
     case "corpus.estimate":
       return data.type;
     case "market.niche":
-      return `${data.type}:${data.label}`;
+      return `${data.type}-${data.label}`;
     case "market.scan":
       return data.type;
     case "schedule.tick":
@@ -158,7 +159,7 @@ export async function installSchedules() {
     { type: "alerts.evaluate" },
     {
       repeat: { pattern: "15,45 * * * *" },
-      jobId: "alerts.evaluate:all",
+      jobId: "alerts.evaluate-all",
       removeOnComplete: { count: 48 },
     },
   );
@@ -167,3 +168,4 @@ export async function installSchedules() {
 export async function queueHealth() {
   return getQueue().getJobCounts("waiting", "active", "delayed", "failed", "completed");
 }
+
