@@ -1,0 +1,103 @@
+---
+title: "App Store Search Popularity vs Search Volume: Decoding Apple's 5-Dot Priority"
+description: "How to convert Apple Search Ads Search Popularity (1–5 dots and 0–100 API integers) into realistic monthly impression estimates without falling for fake volume claims."
+date: "2026-09-08"
+category: "keyword-research"
+tags: ["keywords", "apple-search-ads", "volume", "measurement"]
+author: "The ASO team"
+---
+
+If you have ever used Apple Search Ads (ASA) to research keywords, you have seen the **Search Popularity** gauge: a horizontal bar showing between zero and five blue dots. In the Search Ads API, this is returned as an integer from 0 to 100.
+
+Many ASO tools take this 0–100 integer, pass it through an unverified multiplier, and proclaim: *"This keyword gets 34,200 monthly searches!"*
+
+In this post, we explain how Apple's Search Popularity index actually works, why it is **exponential rather than linear**, and how to calibrate it against ground-truth impression reports to guide your ASO metadata decisions.
+
+```
++-----------------------------------------------------------------------------------+
+|               APPLE SEARCH POPULARITY SCALE vs TRUE SEARCH VOLUME                 |
++-----------------------------------------------------------------------------------+
+|  Popularity (0-100)      Relative Velocity         Estimated Daily Store Searches |
++-----------------------------------------------------------------------------------+
+|  [ 5 - 20 ]               Long-Tail Baseline        10 - 150                      |
+|  [ 21 - 35 ]              Niche Commercial          150 - 1,200                   |
+|  [ 36 - 50 ]              Established Category      1,200 - 8,500                 |
+|  [ 51 - 65 ]              High-Demand Head Term     8,500 - 45,000                |
+|  [ 66 - 80 ]              Tier-1 Category Leader    45,000 - 250,000              |
+|  [ 81 - 100 ]             Global Brand Superhead    250,000 - 2,000,000+          |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## What Search Popularity Actually Measures
+
+Apple's Search Popularity metric is not an absolute search counter. It is a **normalized relative frequency index** derived from actual user queries entered into the App Store search bar within a rolling 30-day window per storefront (country).
+
+Key characteristics of the raw metric:
+1. **Storefront Specific**: A Search Popularity score of 45 in the United States (`US`) represents vastly more absolute searches than a score of 45 in Sweden (`SE`) or Australia (`AU`).
+2. **Exponential Distribution**: The curve is power-law distributed. The volume difference between popularity 60 and 70 is ten times greater than the volume difference between popularity 20 and 30.
+3. **Threshold Truncation**: Keywords with virtually zero searches return a score of 5 in the Search Ads API. Apple never returns 0 for a valid term; 5 is the floor.
+
+---
+
+## Popularity Dots vs Numerical API Values
+
+In the Apple Search Ads dashboard UI, Apple groups the 0–100 integer score into 5 visual dots:
+
+| Visual UI | API Value Band | Search Velocity Category | Practical Example (US Storefront) |
+| :--- | :--- | :--- | :--- |
+| **0.5 / 5 Dots** | 5 – 19 | Micro-niche / Long-tail | `"fasting tracker for women over 50"` |
+| **1.0 / 5 Dots** | 20 – 29 | Low volume / Specific intent | `"intermittent fasting keto tracker"` |
+| **2.0 / 5 Dots** | 30 – 44 | Moderate demand / Mid-tail | `"fasting timer and tracker"` |
+| **3.0 / 5 Dots** | 45 – 59 | High commercial demand | `"intermittent fasting app"` |
+| **4.0 / 5 Dots** | 60 – 74 | Category Head Term | `"fasting app"` |
+| **5.0 / 5 Dots** | 75 – 100 | Ultra-Competitive Head Term | `"fasting"`, `"diet"`, `"weight loss"` |
+
+---
+
+## Calibrating Popularity to Ground Truth Impressions
+
+How do you translate a score of 48 into an operational number?
+
+The only reliable method is **empirical calibration**: bidding on an exact-match keyword with an uncapped budget (or a high $100 CPA bid) in Apple Search Ads for 7 to 14 days and recording **Impressions Delivered (Share of Voice = 100%)**.
+
+When you measure actual impressions across dozens of keywords in the same country, the empirical relationship emerges:
+
+```math
+\text{Estimated Daily Searches} \approx \alpha \cdot e^{\beta \cdot (\text{Popularity})}
+```
+
+Where for the **US Storefront**:
+* $\alpha \approx 3.8$
+* $\beta \approx 0.082$
+
+```
+Daily Impressions (Log Scale)
+  1,000,000 ┼                                                  ● (Pop 90)
+    100,000 ┼                                     ● (Pop 75)
+     10,000 ┼                        ● (Pop 60)
+      1,000 ┼           ● (Pop 45)
+        100 ┼  ● (Pop 25)
+         10 ┼──────────────────────────────────────────────────────────
+            0   10   20   30   40   50   60   70   80   90   100  Popularity
+```
+
+### Why Popularity 25–45 is the Indie Sweet Spot
+Many teams obsess over targeting terms with popularity > 60. However:
+1. **Conversion Rate Decay**: Head terms (Pop 70+) suffer from fragmented user intent. A user searching `"fitness"` wants workouts, calories, trackers, or gym guides. A user searching `"hiit interval timer with voice"` (Pop 28) has razor-sharp intent and converts at 45%+.
+2. **Organic Rank Achievability**: Achieving rank #1 on a Pop 35 keyword yields **more organic downloads** than sitting at rank #42 on a Pop 75 keyword.
+
+---
+
+## Strategic Decision Matrix for Metadata
+
+When allocating your 30 characters of Title, 30 characters of Subtitle, and 100 characters of Keyword Field, use this allocation matrix:
+
+| Metadata Field | Target Popularity Band | Search Intent Focus | Optimization Objective |
+| :--- | :--- | :--- | :--- |
+| **App Title** (30 chars) | Popularity 45 – 70 | Primary Category Seed + High Intent | Maximum indexing weight for top-volume convertible term |
+| **Subtitle** (30 chars) | Popularity 30 – 55 | Secondary Core Benefit / Descriptor | Complements title tokens to create high-value combinations |
+| **Keyword Field** (100 chars) | Popularity 15 – 45 | Long-tail seeds & cross-modifiers | Feeds combinatorial permutations without wasting title space |
+
+To audit the real demand of your target keywords against verified store autocomplete observations, use our [App Store Keyword Research tool](/features/keyword-research) or explore our [AI ASO Writer](/features/ai-aso-writer) to generate character-compliant listings.

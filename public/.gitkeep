@@ -1,0 +1,6 @@
+Next serves this directory at the site root. It is empty today — favicons, OG
+fallbacks and any static file that must keep a stable URL belong here.
+
+Kept in version control because the Dockerfile copies public/ unconditionally,
+and `COPY /app/public ./public` fails the whole build when the directory does
+not exist.

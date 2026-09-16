@@ -1,0 +1,116 @@
+---
+title: "The App Store Keyword Density Myth: Exact Matches vs Token Weighting in iOS & Play"
+description: "Why repeating keywords on iOS wastes valuable character limits, how tokenizers actually parse metadata, and the real mathematical difference between iOS and Google Play indexing."
+date: "2026-09-08"
+category: "keyword-research"
+tags: ["keywords", "metadata", "ios", "android", "strategy"]
+author: "The ASO team"
+---
+
+One of the most persistent myths in App Store Optimization is that you need to repeat a keyword multiple times across your Title, Subtitle, and Keyword field to "reinforce" its ranking power to Apple's search algorithm.
+
+On the iOS App Store, **repeating a keyword does not increase your ranking. It simply burns characters you could have used to rank for another term.**
+
+In this post, we look under the hood of app store search indexers: how tokenizers break strings into atomic terms, how cross-field combination works, and where token repetition actually matters (and where it actively harms you).
+
+```
++-----------------------------------------------------------------------------------+
+|                        APPLE APP STORE TOKENIZER BEHAVIOR                         |
++-----------------------------------------------------------------------------------+
+|  Title:     "Habit Tracker & Daily Routine"      --> [habit, tracker, daily, routine]
+|  Subtitle:  "Build Habits, Track Goals"          --> [build, habits, track, goals]
+|  Keywords:  "habit,tracker,routine,planner"      --> [habit, tracker, routine, planner]
++-----------------------------------------------------------------------------------+
+|  Resulting Index Set (De-duplicated):                                             |
+|  [habit, tracker, daily, routine, build, habits, track, goals, planner]           |
+|                                                                                   |
+|  WASTED CHARACTERS:                                                               |
+|  - "habit" repeated 3 times   (wasted: 10 chars)                                  |
+|  - "tracker" repeated 2 times (wasted: 7 chars)                                   |
+|  - "routine" repeated 2 times (wasted: 7 chars)                                   |
+|  TOTAL WASTED CAPACITY: 24 characters = 3 to 4 net-new target keywords lost       |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## How Apple's Indexer Combines Tokens
+
+Apple treats your metadata fields as a unified pool of unique tokens. When an indexing job runs, Apple's search daemon:
+
+1. **Normalizes & Strips Punctuation**: Removes hyphens, ampersands, commas, and special symbols.
+2. **Tokenizes & Stems**: Splits strings on spaces and commas into individual word tokens.
+3. **De-duplicates**: Merges identical tokens across the Title, Subtitle, and Keyword field into a single mathematical set.
+4. **Constructs Multi-Word Permutations**: Creates search index combinations from all tokens across all indexed fields.
+
+```
+Title Token: "habit"
+Subtitle Token: "journal"
+Keyword Token: "offline"
+
+--> Automatically indexed for:
+    "habit journal"
+    "habit offline"
+    "journal offline"
+    "offline habit journal"
+```
+
+Because Apple automatically generates cross-field permutations, placing `"habit"` in your Title and `"journal"` in your Subtitle indexes your app for `"habit journal"` without needing the exact phrase written contiguously.
+
+### The True Value Weighting of iOS Fields
+While repetition adds zero value, **placement location** dictates algorithmic weight:
+
+| Metadata Field | Max Characters | Indexing Weight | Primary Objective |
+| :--- | :--- | :--- | :--- |
+| **App Title** | 30 | **10.0x (Highest)** | Primary category seed term + strongest conversion hook |
+| **Subtitle** | 30 | **5.0x (High)** | Secondary high-volume modifiers + complementary seeds |
+| **Keyword Field** | 100 | **2.0x (Baseline)** | Unique long-tail words, synonyms, and combinatorial tokens |
+| **In-App Purchase Name** | 30 | **1.0x (Variable)** | Exact-match transactional terms |
+| **Description** | 4,000 | **0.0x (NOT INDEXED)** | Conversion only. Apple never reads description for search. |
+
+---
+
+## Where the Myth Came From: Google Play vs iOS
+
+Why do so many ASO blogs recommend "2% to 3% keyword density"?
+
+Because on **Google Play**, text density in the 4,000-character long description *does* influence search ranking. Google Play uses full-text indexing, meaning a single mention of a word in 4,000 characters might be treated as incidental noise, whereas 4 to 5 natural mentions across structured sections confirm topic relevance.
+
+However, copying Google Play density tactics to iOS destroys performance:
+
+| Strategy Aspect | Apple App Store (iOS) | Google Play (Android) |
+| :--- | :--- | :--- |
+| **Keyword Repetition** | **Zero algorithmic benefit.** De-duplicated immediately. | **Moderate benefit** (optimal 3–5 natural mentions). |
+| **Keyword Stuffing Risk** | Wasted character capacity. | **Search penalty or listing rejection** for spam. |
+| **Cross-Field Permutation** | Native across Title, Subtitle, and Keyword field. | Requires contiguous multi-word phrases in text. |
+| **Description Indexing** | **Ignored** by search engine. | **Fully parsed** by Google NLP. |
+
+---
+
+## 5 Practical Rules for Clean iOS Metadata
+
+When forging your metadata in our [AI ASO Writer](/features/ai-aso-writer), follow these five rules to reclaim wasted characters:
+
+```
+[Character Audit Checklist]
+├── 1. Zero Token Overlap between Title, Subtitle, and Keyword Field
+├── 2. No Plural Duplication (Apple stems "workout" and "workouts" automatically)
+├── 3. No Spaces after Commas in the 100-character Keyword Field ("run,jog,pace")
+├── 4. No Stop Words ("the", "a", "an", "for", "with", "app") in Keyword Field
+└── 5. Maximize Single-Word Modifiers in the Keyword Field
+```
+
+### 1. Strip Spaces from the Keyword Field
+Apple's keyword field parser uses commas as delimiters. Writing:
+`fasting, tracker, keto, timer` (30 characters)
+Burns 3 characters on spaces. Writing:
+`fasting,tracker,keto,timer` (27 characters)
+Reclaims 3 characters — enough space to add another 3-letter keyword like `run` or `log`.
+
+### 2. Don't Waste Space on Plurals
+Apple's morphological stemmer automatically matches singular and plural forms for English and most major European languages. If you include `"tracker"`, you will automatically rank for `"trackers"`. Adding both wastes 8 characters.
+
+### 3. Avoid Category Names and the Word "App"
+Apple automatically indexes your app for its assigned primary category (e.g. `"Health & Fitness"`, `"Finance"`) and the universal token `"app"`. Putting `"free fitness app"` in your keyword field is 100% wasted space.
+
+To verify your keyword combinations and simulate character-limit enforcement across your listings, explore our [App Store Keyword Research tool](/features/keyword-research).

@@ -1,0 +1,145 @@
+---
+title: "Writing an app title in 30 characters that ranks and converts"
+description: "The title is the highest-weighted indexed field on both stores and the only text guaranteed to be read. Where it truncates, what to put first, and why brand-plus-keyword survives contact with reality."
+date: "2026-08-22"
+category: "store-listing"
+tags: ["listing", "metadata", "conversion", "ios", "android"]
+author: "The ASO team"
+---
+
+Thirty characters, doing two jobs that pull against each other.
+
+The title is the **highest-weighted indexed field** on both stores — a term there is a
+stronger ranking claim than the same term anywhere else. It is also the only text
+guaranteed to be seen by every user in every context: search results, charts, the home
+screen, notifications.
+
+Optimise it purely for ranking and you get a keyword list nobody trusts. Optimise it purely
+for brand and you are invisible to anyone who does not already know your name.
+
+## Where it truncates
+
+The number that matters is not 30. It is however many characters survive in the context
+where users actually see you.
+
+- **Product page:** the full 30 characters.
+- **Search results and charts:** truncated, often around 20 characters depending on device
+  width and language.
+- **Home screen, under the icon:** shortest of all, frequently 10 to 12 characters before an
+  ellipsis.
+
+You cannot control which context someone meets you in. So:
+
+> **Put the part that must survive first.**
+
+If your title is `Pocketwise: Budget Planner`, a user scanning search results may see
+`Pocketwise: Budg…` and on their home screen `Pocketwi…`. That is fine — the brand survives,
+which is what home-screen text is for.
+
+If your title is `Budget Planner & Expense Tracker — Pocketwise`, the brand never appears
+anywhere except the product page, and your home screen icon is labelled `Budget P…` like
+every other budgeting app.
+
+## The shape that works
+
+**Brand: primary keyword.**
+
+```
+Pocketwise: Budget Planner
+Habitly: Habit Tracker
+```
+
+Brand first gives you recall, home-screen identity, and protection against competitors
+bidding on your name. Keyword second gives you the ranking claim and tells a stranger what
+the app is.
+
+The separator matters less than people think — colon, dash and hyphen all work. Colons read
+slightly cleaner and cost one character.
+
+### When to lead with the keyword instead
+
+One case justifies inverting it: **you have no brand recognition and no plans to build any
+soon.** A new utility app with no marketing budget gets more from `Budget Planner:
+Pocketwise` than from the reverse, because nobody is searching the brand.
+
+Switch back once the brand is worth something. Title changes are cheap and re-index within
+days.
+
+## Rules that come from how indexing works
+
+**Never repeat a word across indexed iOS fields.** Apple indexes the union of your title,
+subtitle and keyword field. `Habitly: Habit Tracker` plus `habit` in your keyword field
+wastes characters you could have spent on another term entirely.
+
+**You do not need phrases.** Apple builds combinations across fields. With `Habit` in the
+title and `tracker` in keywords, you are eligible for "habit tracker" without spending the
+phrase. On a 30-character budget this is the difference between one term and three.
+
+**Skip your category name.** You are already indexed for the category. `Fitness` in the
+title of a fitness app is usually a wasted word.
+
+**Skip filler.** `The`, `App`, `Free`, and `&` cost characters and add no ranking value.
+`Budget Planner & Expense Tracker` becomes `Budget Planner Expense` at the same information
+content and eight fewer characters.
+
+Note the one exception: `free` is genuinely searched as a modifier. It is a real keyword,
+just rarely worth a title slot.
+
+## Rules that come from how people read
+
+**Say what it is, not what it is like.** `Pocketwise: Money Made Simple` is a tagline. A
+stranger scanning results cannot tell whether it is a budgeting app, a banking app or a
+payments app.
+
+**Avoid over-punctuation.** Titles crowded with pipes, dashes and emoji read as spam and
+both stores may reject them.
+
+**Test it small.** Render your title at search-result size and at home-screen size before
+committing. Most title problems are invisible at full width and obvious at the size users
+actually see.
+
+## Play's differences
+
+Google Play also gives 30 characters and also weights the title heavily. Two divergences:
+
+**Play policing is stricter on promotional text in titles.** Words like `#1`, `Best`, or
+`Free` in the title can trigger a policy rejection. Apple is more permissive here; do not
+assume a title that passed review on iOS will pass on Play.
+
+**Play has no keyword field**, so the title carries relatively more of the ranking load,
+with the short description and full description behind it. That is an argument for spending
+title characters on keywords slightly more aggressively on Play than on iOS — where the
+100-character keyword field can absorb them instead.
+
+Nothing requires the titles to match across stores, and there is a reasonable case that they
+should not.
+
+## Changing it
+
+Title changes require a new version submission on iOS and go through review. On Play they
+can be updated from Console without a release.
+
+Either way:
+
+- **Expect a re-indexing delay** of days. A rank dip immediately after a title change is
+  normal and often recovers.
+- **Change one thing.** If you change the title and the screenshots together you will not
+  know which moved the number.
+- **Do not thrash.** Both stores build up ranking signal for a term over time. Rotating
+  keywords monthly means never accumulating any.
+
+## The short version
+
+- The title is the highest-weighted indexed field and the only text everyone sees.
+- It truncates hard in search and harder on the home screen — front-load what must survive.
+- `Brand: primary keyword` is the default; invert only when the brand is worth nothing yet.
+- Never repeat a word across iOS indexed fields — Apple indexes their union.
+- Target vocabulary, not phrases; Apple builds the combinations.
+- Cut `the`, `app`, `&` and your category name.
+- Play rejects promotional words that Apple allows. The titles need not match.
+
+---
+
+*Part of our [store listing](/blog/category/store-listing) cluster. Start with [App Store
+Listing Optimization](/blog/app-store-listing-optimization). For choosing which keyword
+earns the slot, see [App Store Keyword Research](/blog/app-store-keyword-research).*

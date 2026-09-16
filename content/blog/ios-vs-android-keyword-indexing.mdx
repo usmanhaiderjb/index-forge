@@ -1,0 +1,68 @@
+---
+title: "iOS and Android do not index your listing the same way"
+description: "The App Store reads a dedicated keyword field and mostly ignores your description. Google Play reads the description in full. Running one metadata strategy across both wastes half your fields."
+date: "2026-08-10"
+category: "keyword-research"
+tags: ["keywords", "metadata", "app-store", "google-play"]
+author: "The ASO team"
+---
+
+The single most common ASO mistake is treating the two stores as one problem. They index
+different fields, weight them differently, and punish different things.
+
+## What the App Store reads
+
+Apple gives you a **100-character keyword field** that users never see. It is the highest-value
+real estate in iOS ASO, and it has rules that reward precision:
+
+- **Comma-separated, no spaces after commas.** A space costs you a character and buys nothing.
+- **Do not repeat words across fields.** Apple combines your app name, subtitle and keyword field
+  into one index. A word in your title does not need to be in your keywords, and putting it there
+  wastes characters you cannot get back.
+- **Singulars and plurals are handled** — you generally do not need both.
+- **Do not include your category name or the word "app".** Apple already indexes those.
+
+The **name** (30 characters) and **subtitle** (30 characters) are indexed and visible. Between
+them and the keyword field you have 160 characters that matter.
+
+The **description** is, for ranking purposes, close to worthless on iOS. It converts; it does not
+rank.
+
+## What Google Play reads
+
+Google indexes the **title** (30 characters), the **short description** (80 characters) and the
+**full description** (4000 characters) — the last one in full.
+
+That inverts the strategy. On Android the long description is a genuine ranking surface, and
+keyword density in it is a real lever. It is also a real trap: Google penalises keyword stuffing,
+and repetition that reads badly to a human tends to read badly to the ranking system too. A
+mention rate somewhere around 2–3% for your primary term is the usual guidance — enough to be
+unambiguous, not enough to look automated.
+
+There is no keyword field on Android. If you are used to iOS, that absence is where the
+100 characters of intent have to go somewhere else.
+
+## The consequence
+
+The same listing, ported field-for-field across stores, gets it wrong in both directions:
+
+- Ported iOS → Android: your description is thin, and you have lost your only Android ranking
+  surface.
+- Ported Android → iOS: your keyword field is empty or duplicates the title, and you have thrown
+  away the highest-leverage field Apple gives you.
+
+Any listing audit that scores both platforms with one rule set is telling you something false
+about one of them. "Your description does not mention your primary keyword" is critical advice on
+Google Play and near-irrelevant on iOS — a checker that does not know which store it is looking
+at will confidently give you the wrong priority.
+
+## Localization is not translation
+
+One more asymmetry worth knowing: on iOS, adding a localization gives you a *new* 100-character
+keyword field per storefront. Localizing into a language you do not speak, purely to claim the
+extra keyword field, is a real and widely used tactic.
+
+But an audit that measures whether fields are *filled* will score an untranslated locale
+identically to a translated one. Both have a subtitle; only one is in the right language. If your
+tooling reports Brazil at 72/100 while the listing is entirely in English, the score is measuring
+the wrong thing — what you want to know first is whether the locale is localized at all.

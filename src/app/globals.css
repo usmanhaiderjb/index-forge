@@ -1,0 +1,338 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens.
+ *
+ * The chart palette is the validated reference instance: slot order is the
+ * colorblind-safety mechanism, not decoration, so series are assigned in
+ * fixed order and never cycled. Dark values are separately selected steps for
+ * the dark surface, not an automatic inversion.
+ */
+@theme {
+  /*
+   * The brand faces, with the previous system stacks kept as the fallback —
+   * next/font sets the variables once the files load, and a missing variable
+   * would otherwise leave the page with no font-family at all.
+   */
+  --font-sans: var(--font-sans-brand), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-mono-brand), ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --radius-card: 0.75rem;
+}
+
+:root {
+  color-scheme: light;
+
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-raised: #ffffff;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  /*
+   * Nudged from #898781, which cleared AA on --surface (4.85:1) but landed at
+   * 4.47:1 on --surface-raised — so the same token passed or failed depending
+   * on which card it happened to sit in. 4.97:1 on the raised surface.
+   */
+  --text-muted: #918f89;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.16);
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  --delta-up: #006300;
+  --delta-down: #d03b3b;
+
+  --accent: #2a78d6;
+  --accent-contrast: #ffffff;
+
+  /*
+   * Logo colours. Global rather than scoped to the marketing surface, because
+   * the mark also appears in the app shell, the sign-in screen and the favicon.
+   * The mark keeps its own palette in both themes — an anvil that changes colour
+   * with the OS theme stops being a logo.
+   */
+  --forge-obsidian: #0f172a;
+  --forge-molten: #ff5722;
+  --forge-accent: #3b82f6;
+  --forge-face: #f8fafc;
+
+  /*
+   * Molten orange as *text*, defined globally because the wordmark renders in
+   * the app shell and on the sign-in screen, not only on the marketing surface.
+   * Scoping it there left `var(--brand-ink)` unresolved everywhere else, which
+   * CSS treats as invalid-at-computed-value-time — so "Forge" silently
+   * inherited the surrounding colour instead of being orange at all.
+   *
+   * #ff5722 itself is 3.02:1 on a light background and cannot be used for text.
+   */
+  --brand-ink: #cc461b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --page: #11141a;
+    --surface: #191d26;
+    --surface-raised: #222733;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --grid: #1e2430;
+    --axis: #2a3342;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+
+    --brand-ink: #ff7043;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+
+    --delta-up: #0ca30c;
+    --delta-down: #e05252;
+    --status-critical: #e05252;
+
+    --accent: #3987e5;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand-ink: #ff7043;
+
+  --page: #11141a;
+  --surface: #191d26;
+  --surface-raised: #222733;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --grid: #1e2430;
+  --axis: #2a3342;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --delta-up: #0ca30c;
+  --delta-down: #e05252;
+  --status-critical: #e05252;
+
+  --accent: #3987e5;
+}
+
+/*
+ * Marketing brand palette.
+ *
+ * Scoped to the public site rather than applied globally: the app's data UI
+ * uses --accent as a chart series colour, and a violet there would collide with
+ * the validated dataviz palette. This way the landing page carries the brand
+ * and every chart in the product keeps the hue it was designed around.
+ */
+[data-surface="marketing"] {
+  /*
+   * Deepened Molten Orange, not the raw brand hex.
+   *
+   * Buttons carry white labels, and white on #ff5722 is 3.16:1 — a WCAG AA
+   * failure on the most-clicked text in the product. Deepening only the
+   * interactive fill gets white to 4.54:1 while leaving Molten Orange itself
+   * untouched everywhere it is not sitting behind words: the mark, badges,
+   * chart accents, borders. See --brand-molten below.
+   */
+  --accent: #d1471c;
+  --accent-contrast: #ffffff;
+  --accent-hover: #b03c17;
+  /* The brand colour proper, for anything that is not a text background. */
+  --brand-molten: #ff5722;
+  --brand-soft: #fff1ec;
+  --brand-border: #ffd9cc;
+  /* Molten orange is only legible as *text* on light once darkened. 4.50:1. */
+  --brand-ink: #cc461b;
+  /*
+   * Molten orange as *text on a panel*, in either theme.
+   *
+   * Panels are Forge Obsidian in light mode too, so they cannot use
+   * --brand-ink: the light-theme value (#cc461b) is tuned for a white page and
+   * manages only 3.94:1 on obsidian, which fails AA for the eyebrows that sit
+   * there. This is the dark-mode ink pinned to a constant, 6.57:1 on --panel.
+   */
+  --brand-ink-panel: #ff7043;
+  /*
+   * Molten orange as text on an always-white surface — the button inside the
+   * accent CTA band, which is white in both themes.
+   *
+   * Pinned for the same reason as --brand-ink-panel, and named for the same
+   * reason: --brand-ink flips light in dark mode and drops that button to
+   * 2.74:1. It is also its own token so a future sweep of "--accent used as
+   * text" cannot silently reintroduce the bug, which is exactly what happened
+   * the first time this was fixed.
+   */
+  --brand-ink-on-white: #cc461b;
+  /* Panels that stay dark in both themes. Forge Obsidian. */
+  --panel: #0f172a;
+  --panel-raised: #1c2637;
+  --panel-border: rgba(248, 250, 252, 0.09);
+  --panel-ink: #e2e8f0;
+  --panel-ink-secondary: #94a3b8;
+  --panel-ink-muted: #64748b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-surface="marketing"] {
+    --accent: #d1471c;
+    --accent-hover: #b03c17;
+    --brand-soft: #2a1710;
+    --brand-border: #4a2a1c;
+    --brand-ink: #ff7043;
+  }
+}
+
+:root[data-theme="dark"] [data-surface="marketing"] {
+  --accent: #d1471c;
+  --accent-hover: #b03c17;
+  --brand-soft: #2a1710;
+  --brand-border: #4a2a1c;
+  --brand-ink: #ff7043;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--text-primary);
+  --color-ink-secondary: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+  --color-hairline: var(--border);
+  --color-hairline-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-good: var(--status-good);
+  --color-warning: var(--status-warning);
+  --color-serious: var(--status-serious);
+  --color-critical: var(--status-critical);
+  --color-delta-up: var(--delta-up);
+  --color-delta-down: var(--delta-down);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Long unbroken tokens — env var names, store ids, bundle ids — must wrap
+ * rather than push the page wider. Without this the body scrolls horizontally,
+ * which is never correct here.
+ */
+body {
+  overflow-x: hidden;
+}
+
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Axis ticks and table columns align vertically; standalone figures do not. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Recharts overrides so the chart chrome stays recessive. */
+.recharts-cartesian-axis-tick text {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+
+.recharts-cartesian-grid line {
+  stroke: var(--grid);
+}
+
+.recharts-cartesian-axis-line,
+.recharts-cartesian-axis-tick-line {
+  stroke: var(--axis);
+}
+
+.recharts-surface:focus {
+  outline: none;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--text-muted) 14%, transparent);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--text-muted) 10%, transparent),
+    transparent
+  );
+  animation: shimmer 1.4s infinite;
+}

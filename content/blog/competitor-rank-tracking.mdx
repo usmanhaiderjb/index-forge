@@ -1,0 +1,132 @@
+---
+title: "Competitor rank comparisons are only valid from the same result page"
+description: "Measuring your rank now and a competitor's ten minutes later produces a gap that is partly real and partly drift. Why same-page capture is the only comparable method, and what to track once you have it."
+date: "2026-08-22"
+category: "rank-tracking"
+tags: ["rank-tracking", "competitors", "measurement"]
+author: "The ASO team"
+---
+
+Competitive rank tracking is usually implemented as two separate measurements: look up your
+rank for a term, then look up theirs. The resulting gap gets reported as a competitive
+position.
+
+It is not one. **The two numbers came from different moments**, and a search result page is
+not stable between them.
+
+## Why separate lookups are not comparable
+
+Between your measurement and theirs, any of the following can change the page:
+
+- A competitor's metadata update re-indexes.
+- Ratings shift enough to reorder mid-page results.
+- A paid placement appears or disappears.
+- The store re-runs personalisation or an experiment.
+- Simple ranking churn on a contested term.
+
+None of these are exotic. On a competitive term, mid-page positions move within hours.
+
+So a "gap" of four positions may be four positions, or two, or seven. You cannot tell,
+because you never observed both apps in the same state of the world.
+
+## The fix: read every position from one page
+
+Search the term **once**, and record the position of every app you care about from that
+single result set — yours and every tracked competitor.
+
+The gap is then a real measurement rather than a subtraction of two unsynchronised numbers.
+It costs strictly fewer requests than measuring each app separately, which is a rare case of
+the correct method also being the cheaper one.
+
+Alongside each position, record what you would need to interpret it later:
+
+- the **storefront** and language
+- the **scan depth** — as covered in [your keyword rank did not disappear, your scan ran
+  out](/blog/why-keyword-rank-disappeared), a competitor "not in the top 100" is not the
+  same as "ranked 150th"
+- the **timestamp**
+- ideally, the **full ordered result set**, so the comparison can be re-derived later
+  without re-measuring
+
+That last one is worth the storage. A stored result page lets you answer questions you had
+not thought to ask — like which app took a position you lost — without a time machine.
+
+## What to actually watch
+
+Once positions are comparable, three things are worth tracking and one is not.
+
+### Worth watching: overlap
+
+**Which terms do you and a competitor both rank for?** That set defines who you are actually
+competing with, as opposed to who you think you are.
+
+Teams routinely discover their real competition is an app they had never tracked, because
+competitor lists get built from market perception rather than from search results.
+
+### Worth watching: gaps
+
+**Terms they rank for and you do not.** This is the most actionable output of competitive
+tracking. It is a list of demand you are not serving, filtered to terms already proven
+relevant to your category by the fact that a similar app ranks there.
+
+Not all of them are worth chasing — check relevance and market size — but it is a better
+candidate list than brainstorming.
+
+### Worth watching: movement, not position
+
+A competitor sitting at position 3 for a year is context. A competitor moving from 30 to 8
+in a fortnight is an event, and worth understanding: they changed metadata, ran a campaign,
+got featured, or shipped something.
+
+**Rate of change carries more information than absolute position.**
+
+### Not worth watching: the aggregate "visibility score"
+
+Most tools offer a single composite number blending rank across a keyword set. It moves for
+too many reasons — a term entering or leaving your tracked set, a weighting change, one
+head term moving — and cannot be traced back to a decision.
+
+If a number cannot tell you what to do differently, it is a dashboard ornament.
+
+## Choosing which competitors to track
+
+Not the apps your marketing deck names. The apps that appear on your result pages.
+
+A workable method:
+
+1. Take your top 20 tracked terms.
+2. Record the top 10 results for each.
+3. Count which apps appear most often across those pages.
+
+That frequency ranking is your real competitive set. It usually contains one or two apps
+nobody internally considers a competitor, and omits one everybody does.
+
+Re-run it quarterly. Competitive sets drift, and a tracked list that never changes is
+tracking last year's market.
+
+## Reading a competitor's metadata changes
+
+Positions tell you *that* something moved. Metadata tells you *what* they did.
+
+Snapshot competitor titles, subtitles and descriptions periodically. When a competitor's
+rank moves sharply, the diff between snapshots frequently explains it — a new head term in
+the subtitle, a repositioned title, a changed short description.
+
+This is also the cheapest source of keyword candidates you will find, with the same caveat
+as always: **their metadata is a supply signal, not a demand signal.** It tells you what
+they decided, not what users search. Validate anything you borrow.
+
+## The short version
+
+- Two separate lookups produce a gap that is partly real and partly drift.
+- Read every tracked app's position from **one** result page — more accurate and fewer
+  requests.
+- Store depth, storefront, timestamp, and ideally the whole ordered page.
+- Track overlap, gaps, and rate of change. Ignore composite visibility scores.
+- Build your competitor list from result pages, not from opinion, and refresh it quarterly.
+- Competitor metadata explains rank movements and generates candidates — but validate them.
+
+---
+
+*Part of our [rank tracking](/blog/category/rank-tracking) cluster. Start with [How App
+Store Rankings Actually Work](/blog/how-app-store-rankings-work).*

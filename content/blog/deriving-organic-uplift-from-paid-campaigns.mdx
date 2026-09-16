@@ -1,0 +1,114 @@
+---
+title: "Measuring the K-Factor & Organic Uplift from Paid User Acquisition"
+description: "How paid user acquisition campaigns lift organic keyword rankings and chart positions, how to compute the organic multiplier (K-factor), and how to calculate blended CPI."
+date: "2026-09-05"
+category: "analytics"
+tags: ["analytics", "attribution", "growth", "k-factor"]
+author: "The ASO team"
+---
+
+When user acquisition (UA) managers calculate campaign profitability, they typically use direct Cost Per Install (CPI):
+```math
+\text{Direct CPI} = \frac{\text{Total Paid Ad Spend}}{\text{Directly Attributed Paid Installs}}
+```
+
+If you spend \$10,000 on Apple Search Ads or Google App Campaigns and generate 2,500 direct installs, your direct CPI is **\$4.00**.
+
+If your target LTV is \$3.50, you might conclude the campaign is unprofitable and shut it down.
+
+**Shutting it down may be a multi-million-dollar mistake.**
+
+In mobile app stores, paid installs do not happen in an isolated vacuum. Every paid install increases your download velocity score, which lifts your organic keyword rankings and pushes your app up the top category charts — generating **unattributed organic installs as a direct byproduct of your paid spend**.
+
+In this guide, we show how to measure **Organic Uplift (The Halo Effect)**, calculate your **True Blended CPI**, and determine your organic multiplier.
+
+```
++-----------------------------------------------------------------------------------+
+|               THE PAID USER ACQUISITION HALO EFFECT ENGINE                        |
++-----------------------------------------------------------------------------------+
+|  Paid Campaign Launch (Spend: $10,000) ──► 2,500 Paid Installs Delivered          |
+|                                                    │                              |
+|                                                    ▼                              |
+|  1. Category Chart Rank Jumps: #45 ──► #12 (Top Chart Discovery)                  |
+|  2. Keyword Download Velocity Boosts Core Terms: Rank #6 ──► Rank #2              |
+|                                                    │                              |
+|                                                    ▼                              |
+|  Generates +1,000 Incremental Organic Installs (Unattributed Halo Lift)           |
+|                                                                                   |
+|  Total Installs Delivered = 2,500 Paid + 1,000 Organic = 3,500 Total Installs     |
+|  TRUE BLENDED CPI = $10,000 / 3,500 = $2.85 (PROFITABLE!)                         |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The Mathematics of the Organic Multiplier (K-Factor)
+
+The **Organic Multiplier `(M_org)`** measures how many organic installs are produced for every 1.0 paid install:
+
+```math
+M_{\text{org}} = \frac{\text{Incremental Organic Installs}}{\text{Paid Installs Delivered}}
+```
+
+```
+True Blended CPI = Direct CPI / (1 + M_org)
+```
+
+| Organic Multiplier `(M_org)` | Organic Lift Ratio | Direct CPI | True Blended Cost Per Install |
+| :--- | :--- | :--- | :--- |
+| **0.00** (Zero Lift) | 0% organic byproduct | \$4.00 | **\$4.00** (Full cost) |
+| **0.25** (Moderate Lift) | 1 organic per 4 paid | \$4.00 | **\$3.20** (20% discount) |
+| **0.50** (Strong Lift) | 1 organic per 2 paid | \$4.00 | **\$2.66** (33% discount) |
+| **1.00** (Viral Multiplier) | 1 organic per 1 paid | \$4.00 | **\$2.00** (50% discount) |
+
+---
+
+## The 3 Mechanisms Behind Organic Uplift
+
+Why does paid spend generate organic downloads?
+
+### 1. Keyword Download Velocity Recalibration
+Both Apple and Google calculate search rank using a combination of text relevancy and **recent download velocity on that exact term**.
+* When you run exact-match Apple Search Ads on `"budget planner"`, Apple's algorithm observes that users who search `"budget planner"` frequently download your app.
+* Within 5 to 7 days, your **organic rank** for `"budget planner"` climbs from #8 to #3, capturing free organic search traffic long after the paid campaign ends.
+
+### 2. Top Free Chart Velocity
+App Store and Google Play top category charts (e.g. Top Free Finance) are ranked almost exclusively on **24-hour and 72-hour rolling download volume**.
+* Jumping from Rank #80 to Rank #15 in Top Free Finance puts your app in front of millions of browsing users who never use search.
+
+### 3. Word-of-Mouth & Social Virality (K-Factor)
+If your product has natural sharing loops (e.g. inviting a friend to split a bill, or sharing a workout streak), a portion of paid users will invite non-paid users.
+
+---
+
+## How to Measure Organic Uplift with Pre/Post Baseline Testing
+
+To isolate true organic uplift without confusing it with seasonality:
+
+```
+[4-Step Baseline Incrementality Experiment]
+1. Establish Baseline Window (Days 1–14):
+   - Zero paid spend. Record average daily organic installs (e.g. 500/day).
+2. Launch Scale Burst (Days 15–28):
+   - Spend $500/day on paid campaigns (generates 200 paid installs/day).
+   - Total installs rise to 850/day.
+3. Calculate Delta:
+   - Total Installs: 850
+   - Minus Paid: 200
+   - Remaining Organic: 650 (vs Baseline of 500)
+   - Incremental Organic Lift = 650 - 500 = +150 installs/day!
+4. Compute Multiplier:
+   - M_org = 150 / 200 = 0.75 (75% Organic Halo Effect!)
+```
+
+---
+
+## When Paid Spend FAILS to Generate Organic Lift
+
+Organic uplift is not guaranteed. It collapses under three specific conditions:
+
+1. **Low Retention / High Churn**: If paid users uninstall the app within 24 hours, Google Play and Apple algorithms detect low product satisfaction and withhold chart promotions.
+2. **Generic Audience Targeting**: Broad display ads with low engagement do not produce keyword-specific search velocity.
+3. **Saturated Category Charts**: In ultra-competitive categories like Casino or Casual Gaming, jumping 5 chart positions requires tens of thousands of daily downloads, rendering chart halo effects uneconomical for small budgets.
+
+To track your organic vs paid split daily and evaluate true blended CAC across multiple ad networks, explore our [Metrics Reconciliation Engine](/features/metrics-reconciliation).

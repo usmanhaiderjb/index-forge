@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      This page is loaded from disk with a preload that can rewrite the server
+      URL, so it gets a CSP that forbids remote script and remote connections
+      outright. Nothing here should ever talk to the network.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';"
+    />
+    <title>Connect to your IndexForge server</title>
+    <style>
+      :root {
+        --brand: #d1471c;
+        --brand-hover: #b03c17;
+        --page: #f8fafc;
+        --surface: #ffffff;
+        --border: #e4e4e7;
+        --text: #0f172a;
+        --muted: #71717a;
+        --critical: #dc2626;
+        color-scheme: light dark;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --brand: #d1471c;
+          --brand-hover: #b03c17;
+          --page: #0f172a;
+          --surface: #1c2637;
+          --border: #2a2a2e;
+          --text: #fafafa;
+          --muted: #a1a1aa;
+          --critical: #f87171;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 28px;
+        background: var(--page);
+        color: var(--text);
+        font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      .mark {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        height: 26px;
+        margin-bottom: 16px;
+      }
+
+      .mark i {
+        display: block;
+        width: 7px;
+        border-radius: 2px;
+        background: var(--brand);
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 19px;
+        letter-spacing: -0.3px;
+      }
+
+      p.lede {
+        margin: 0 0 20px;
+        color: var(--muted);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      input {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      input:focus {
+        outline: 2px solid var(--brand);
+        outline-offset: -1px;
+      }
+
+      .hint {
+        margin: 8px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .status {
+        min-height: 38px;
+        margin: 16px 0 0;
+        padding: 9px 11px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+
+      .status[data-tone="error"] {
+        border-color: var(--critical);
+        color: var(--critical);
+      }
+
+      .status[data-tone="busy"] {
+        color: var(--muted);
+      }
+
+      .status[data-tone="none"] {
+        border-color: transparent;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      button {
+        flex: 1;
+        min-height: 40px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      button.primary {
+        border-color: var(--brand);
+        background: var(--brand);
+        color: #ffffff;
+      }
+
+      button.primary:hover:not(:disabled) {
+        background: var(--brand-hover);
+        border-color: var(--brand-hover);
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="mark"><i style="height: 11px"></i><i style="height: 18px"></i><i style="height: 25px"></i></div>
+
+    <h1>Connect to your IndexForge server</h1>
+    <p class="lede">
+      This app is a client. Your data lives on the IndexForge server — point it at wherever that is running.
+    </p>
+
+    <form id="form">
+      <label for="url">Server address</label>
+      <input id="url" name="url" type="text" spellcheck="false" autocomplete="off" autofocus />
+      <p class="hint">
+        Use <code>http://localhost:3000</code> when running the server on this machine, or the
+        address you deployed it to.
+      </p>
+
+      <p class="status" id="status" data-tone="none"></p>
+
+      <div class="actions">
+        <button type="button" id="cancel">Cancel</button>
+        <button type="submit" id="connect" class="primary">Connect</button>
+      </div>
+    </form>
+
+    <script>
+      const form = document.getElementById("form");
+      const input = document.getElementById("url");
+      const status = document.getElementById("status");
+      const connect = document.getElementById("connect");
+      const cancel = document.getElementById("cancel");
+
+      function say(text, tone) {
+        status.textContent = text;
+        status.dataset.tone = tone;
+      }
+
+      window.desktop.current().then(({ serverUrl, reason }) => {
+        input.value = serverUrl;
+        input.select();
+        if (reason) say(reason, "error");
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        connect.disabled = true;
+        cancel.disabled = true;
+        say("Checking…", "busy");
+
+        // Resolves to null on success; the window closes from the main process,
+        // so there is no success branch to write here.
+        const failure = await window.desktop.connect(input.value);
+
+        if (failure) {
+          say(failure, "error");
+          connect.disabled = false;
+          cancel.disabled = false;
+          input.focus();
+        }
+      });
+
+      cancel.addEventListener("click", () => window.desktop.cancel());
+    </script>
+  </body>
+</html>

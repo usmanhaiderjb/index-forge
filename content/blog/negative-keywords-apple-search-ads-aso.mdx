@@ -1,0 +1,125 @@
+---
+title: "Using Apple Search Ads Negative Keywords to Audit Organic Keyword Cannibalization"
+description: "How to prevent Apple Search Ads discovery campaigns from cannibalizing your rank 1 organic installs, and how negative exact matches preserve acquisition margins."
+date: "2026-09-08"
+category: "keyword-research"
+tags: ["apple-search-ads", "keywords", "attribution", "analytics"]
+author: "The ASO team"
+---
+
+When running Apple Search Ads (ASA), one of the most common and expensive mistakes is paying Apple for installs **you would have received organically for free**.
+
+If your app ranks #1 organically for your brand name or a core high-intent search term, running an automated Search Match or broad-match discovery campaign often places a sponsored ad directly above your own organic listing. Users tap the first result they see — and you are billed \$2.50 to \$6.00 for an install that was already yours.
+
+In this guide, we show how to audit keyword cannibalization, structure negative keyword tiers, and preserve marketing margins while expanding true incremental reach.
+
+```
++-----------------------------------------------------------------------------------+
+|                        ORGANIC CANNIBALIZATION AUDIT                              |
++-----------------------------------------------------------------------------------+
+|  Scenario A: Naive Setup (Search Match Active, No Negatives)                      |
+|  [User Searches "BrandName"] ──► [Sponsored Ad ($3.20)] ──► 82% Tap Sponsored Ad  |
+|                                 [Organic Rank #1]      ──► 18% Tap Organic Listing |
+|                                 Net Result: $3,200 spent on cannibalized installs  |
++-----------------------------------------------------------------------------------+
+|  Scenario B: Negative Exact Matched Isolation                                     |
+|  [User Searches "BrandName"] ──► [No Sponsored Ad Shown]                          |
+|                                 [Organic Rank #1]      ──► 96% Tap Organic Listing |
+|                                 Net Result: $0 spent, 96% organic capture rate     |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The Economics of Search Cannibalization
+
+To determine whether paid ads on rank #1 keywords are incremental or cannibalistic, you must measure the **Baseline Displacement Curve**.
+
+When an app ranks #1 organically:
+* **With No Paid Ad**: Organic position #1 captures approximately **65% to 75%** of all search clicks for non-branded terms, and **85% to 95%** for branded queries.
+* **With Your Own Paid Ad at Top**: The paid ad captures **55%**, while your organic listing captures **30%**. Your total capture rises slightly from 75% to 85%, but you are paying for 55% of the traffic to gain a net increment of only 10%.
+
+```
+Incremental Cost Per Install (iCPI) = Total Paid Spend / (Total Installs - Organic Baseline)
+```
+
+If your standard Cost Per Acquisition (CPA) is \$3.00, but 80% of those users would have clicked your organic link anyway, your **true incremental CPA** is actually:
+
+```math
+\text{iCPI} = \frac{\$3.00}{1.0 - 0.80} = \$15.00
+```
+
+Paying \$15.00 per incremental user destroys unit economics for subscription and in-app purchase business models.
+
+---
+
+## The 3-Tier Negative Keyword Architecture
+
+To prevent discovery campaigns from poaching high-ranking organic terms, implement a strict three-tier campaign hierarchy:
+
+```
+                  ┌─────────────────────────────────────┐
+                  │      ASA CAMPAIGN ARCHITECTURE      │
+                  └─────────────────────────────────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         ▼                           ▼                           ▼
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│ BRAND DEFENCE   │         │ EXACT CATEGORY  │         │ DISCOVERY / EXP │
+│ Target: Brand   │         │ Target: High Mid│         │ Search Match ON │
+│ Negative: None  │         │ Negative: Brand │         │ Negative: Brand │
+│                 │         │                 │         │ + Exact Targets │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+```
+
+### 1. Brand Defense Campaign (Controlled Bidding)
+* **Goal**: Defend your exact brand name against aggressive competitor conquesting.
+* **Keywords**: Exact match brand tokens only (`[my brand app]`).
+* **Negatives**: None.
+* **Bid Strategy**: Set low-to-moderate maximum bids. If competitors bid \$5.00 on your brand, evaluate whether their presence converts. If competitor conversion on your brand is low, let them waste budget.
+
+### 2. Exact Match Category Campaign
+* **Goal**: Scale verified, high-intent category terms (e.g. `[budget planner]`, `[split bills]`).
+* **Keywords**: Exact match phrases identified from keyword research.
+* **Negatives**: Add all Brand terms as **Negative Exact** to ensure brand search volume never leaks into category reporting.
+
+### 3. Discovery & Search Match Campaign
+* **Goal**: Uncover new long-tail search queries through Apple's Search Match algorithm.
+* **Keywords**: None (Search Match = ON, Broad Match = ON).
+* **Negatives**: Add **ALL Brand terms AND ALL Category Exact keywords** as **Negative Exact**.
+
+```
+Discovery Campaign Negative List:
+├── [your brand] (Negative Exact)
+├── [your brand name] (Negative Exact)
+├── [budget planner] (Negative Exact)
+└── [expense tracker] (Negative Exact)
+```
+
+By placing every keyword you already target in Category Exact into Discovery as a Negative Exact, the discovery campaign is forced to bid *exclusively* on net-new search terms you do not currently track.
+
+---
+
+## When to Bid on Your Own Rank #1 Keywords
+
+Is there ever a valid reason to bid on a keyword where your app ranks #1 organically?
+
+Yes, under exactly two conditions:
+
+| Scenario | Condition | Rationale |
+| :--- | :--- | :--- |
+| **Aggressive Competitor Conquesting** | A well-funded competitor is running ads on your brand and capturing 25%+ of top-of-page clicks. | Running an ad pushes their sponsored slot off the first viewport, securing combined 90%+ share. |
+| **Custom Product Page (CPP) Testing** | You want to test a radical new screenshot or onboarding angle without changing your primary organic listing. | Search Ads allows pairing specific CPP variants to exact search terms. |
+
+---
+
+## Tracking Organic vs Paid Attribution Accurately
+
+The greatest obstacle in identifying cannibalization is inaccurate data reporting. If you rely solely on App Store Connect, paid and organic installs are lumped into generic totals.
+
+To see the real split:
+1. Connect Apple Search Ads and App Store Connect to a single reconciliation engine like [IndexForge Metrics Reconciliation](/features/metrics-reconciliation).
+2. Subtract verified Search Ads attributed installs from total first-time downloads per storefront per day.
+3. Monitor your **Organic Share of Voice** daily. When you launch a Search Ads campaign, if total installs stay flat while paid installs rise and organic installs drop by the same amount, you have proven 100% cannibalization.
+
+Learn more about tracking your keywords daily in our [Rank Tracking feature](/features/rank-tracking) or read our [Organic vs Paid Installs Guide](/blog/organic-vs-paid-installs).

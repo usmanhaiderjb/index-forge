@@ -1,0 +1,15 @@
+> tsx --env-file-if-exists=.env scripts/build-corpus.ts --stats
+
+Corpus
+  446,304 terms
+    PREFIX_CRAWL     445,728
+    METADATA_MINING  576
+  446,132 with a demand index
+    LOW              425,248
+    MEDIUM           17,506
+    HIGH             3,378
+  47,548 with a difficulty score
+
+Frontier
+  prefixes    3,158,253 pending, 101,315 done, 0 failed
+  categories  0 pending, 16 done, 0 failed

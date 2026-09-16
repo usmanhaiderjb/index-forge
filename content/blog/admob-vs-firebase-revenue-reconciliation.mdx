@@ -1,0 +1,107 @@
+---
+title: "AdMob vs Firebase GA4: Why Your Ad Revenue Numbers Disagree"
+description: "Why summing AdMob and Firebase ad revenue doubles your earnings, how client-side logging differs from settlement systems, and how to enforce source precedence."
+date: "2026-09-05"
+category: "analytics"
+tags: ["analytics", "revenue", "admob", "firebase", "precedence"]
+author: "The ASO team"
+---
+
+When building an analytics dashboard for an app monetized with in-app advertising, teams frequently connect both **Google AdMob** and **Firebase (Google Analytics for GA4)**.
+
+Then, they run a naive SQL aggregation:
+`SELECT SUM(revenue) FROM metrics WHERE date = '2026-09-01'`
+
+The dashboard reports that the app earned **\$1,386.00 in ad revenue yesterday**. The founders celebrate.
+
+Then, the monthly bank transfer from Google arrives: **\$700.00**.
+
+What happened?
+
+**The dashboard counted the exact same pot of money twice.**
+
+In this technical guide, we break down why AdMob and Firebase report overlapping figures, how client-side event logging differs from server-side settlement, and how to implement strict **Source Precedence Rules** to ensure your revenue reporting matches your real bank statements.
+
+```
++-----------------------------------------------------------------------------------+
+|               SOURCE PRECEDENCE IN AD REVENUE RECONCILIATION                      |
++-----------------------------------------------------------------------------------+
+|  AdMob Billing Console:       Reports $700.00 (Authoritative Settlement)          |
+|  Firebase GA4 Event Logs:     Reports $686.00 (Client-Side Impression Estimates)  |
++-----------------------------------------------------------------------------------+
+|  NAIVE SUMMATION (FATAL ERROR):                                                   |
+|  $700.00 + $686.00 = $1,386.00 (100% Artificial Revenue Inflation!)              |
++-----------------------------------------------------------------------------------+
+|  INDEXFORGE SOURCE PRECEDENCE RULE:                                               |
+|  AdMob is Tier-1 (Closest to the Money) ──► USES $700.00                         |
+|  Firebase is Tier-2 (Telemetry Observer) ──► DROPPED FROM AGGREGATION             |
+|  Reported Daily Ad Revenue = $700.00 (Matches Bank Wire Exactly)                  |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The Root Cause: Telemetry Observers vs Settlement Systems
+
+To understand why AdMob and Firebase disagree, you must distinguish between an **Event Telemetry Observer** and a **Financial Settlement Engine**:
+
+### 1. Google AdMob (The Settlement Engine)
+* **What It Measures**: AdMob manages the ad server, conducts real-time programmatic bidding auctions, and pays out revenue to your bank account.
+* **Accuracy**: 100% financial ground truth. It factors in invalid traffic deductions, clawbacks, and currency settlement rates.
+* **Timing**: Figures are updated on a 24-hour delayed settlement window.
+
+### 2. Firebase / GA4 (The Telemetry Observer)
+* **What It Measures**: Firebase listens to the client-side `ad_impression` event fired by the mobile SDK on the user's phone.
+* **Accuracy**: An estimate calculated from average eCPM values passed to the device.
+* **Discrepancy Triggers**:
+  * Users going offline before event dispatch.
+  * Ad blockers preventing analytics pings.
+  * Invalid ad clicks filtered out by AdMob servers but already logged locally by Firebase.
+
+---
+
+## The Additive vs Mutually Exclusive Matrix
+
+Not all revenue sources are mutually exclusive. When aggregating revenue across multiple providers, apply this strict precedence matrix:
+
+| Metric Category | Providers Connected | Aggregation Rule | Correct Mathematical Behavior |
+| :--- | :--- | :--- | :--- |
+| **In-App Ad Revenue** | AdMob + Firebase GA4 | **Mutually Exclusive** (Source Precedence) | **AdMob wins.** Firebase value is suppressed from total. |
+| **Ad Spend / UA** | Google Ads + Apple Search Ads | **Additive** | **Summed.** (Google Ads spend + ASA spend). Different money spent in different networks. |
+| **In-App Purchases (IAP)** | App Store Connect + Play Console | **Additive across platforms** | **Summed across OS.** (iOS IAP + Android IAP). |
+| **Subscription Proceeds** | StoreKit + Firebase In-App Purchase | **Mutually Exclusive** | **StoreKit / App Store Connect wins.** |
+
+---
+
+## How IndexForge Enforces Source Precedence
+
+In [IndexForge Metrics Reconciliation](/features/metrics-reconciliation), every raw metric record ingested from third-party APIs retains its source identifier:
+
+```typescript
+type MetricPoint = {
+  appId: string;
+  date: Date;
+  metric: "ad_revenue" | "spend" | "installs";
+  provider: "admob" | "firebase" | "google_ads" | "app_store_connect";
+  value: number;
+};
+```
+
+When calculating aggregate dashboards:
+1. The engine checks active connections for the target app.
+2. For `ad_revenue`, it evaluates the hierarchy: `AdMob (Priority 1) > AppLovin (Priority 2) > Firebase (Priority 3)`.
+3. If AdMob data exists for that date, it uses AdMob and flags Firebase as `derived_suppressed`.
+4. If AdMob is disconnected, it falls back to Firebase and visibly marks the figure as an *estimated telemetry proxy*.
+
+---
+
+## 3 Rules for Clean Mobile Financial Reporting
+
+1. **Never Calculate eCPM on Client Logs**: Calculate effective CPM as:
+   ```
+eCPM = (Settled AdMob Revenue / Verified AdMob Impressions) * 1,000
+```
+2. **Account for Timezone Day Boundaries**: AdMob reports in Pacific Time (`UTC-8`) by default; App Store Connect reports in UTC. Standardize all incoming dates to UTC before joining.
+3. **Audit Invalid Traffic Deductions**: Review AdMob's end-of-month adjustments. If invalid click deductions exceed 3%, investigate fraudulent background ad loops.
+
+To automate cross-network revenue reconciliation and eliminate double-counting across six store and ad integrations, explore our [Metrics Reconciliation Engine](/features/metrics-reconciliation).

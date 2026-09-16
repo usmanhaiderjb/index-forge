@@ -1,0 +1,150 @@
+---
+title: "A/B testing your product page on both stores"
+description: "Play has real split testing built in. Apple's Product Page Optimization works differently and reports differently. What each one can actually tell you, and the traps that produce confident wrong answers."
+date: "2026-08-22"
+category: "store-listing"
+tags: ["listing", "conversion", "testing", "creative"]
+author: "The ASO team"
+---
+
+Both stores now offer native product page testing, and the two work differently enough that
+advice written for one is misleading for the other.
+
+The bigger problem is that both make it easy to run a test that produces a confident number
+which is not a result.
+
+## What each store gives you
+
+**Google Play: Store Listing Experiments.** Real A/B testing, built into Play Console. You
+define variants of your icon, screenshots, video, short description or full description, and
+Play splits traffic and reports which won with a confidence interval.
+
+**Apple: Product Page Optimization (PPO).** Up to three treatments against your current
+page, testing icon, screenshots or preview video. Apple reports improvement with a
+confidence figure. Notably, **PPO can test your app icon** — the treatment icon is applied
+on device, which is unusual and useful.
+
+Both are free, both run on real store traffic, and both are better than the alternative of
+shipping a change and squinting at the install graph afterwards.
+
+## The traps
+
+### Stopping when it looks significant
+
+The commonest error and the most expensive.
+
+Watching a test and stopping the moment it crosses significance produces false positives at
+a rate far above the nominal 5%, because you took many looks at the data and stopped on the
+most favourable one.
+
+**Decide the duration before you start, and let it run.** If a test is going to run two
+weeks, it runs two weeks — including the week where the variant is losing.
+
+### Running through a full weekly cycle, or not at all
+
+App traffic has a strong day-of-week pattern. A test that runs Tuesday to Friday compares
+weekdays to weekdays and tells you nothing about weekends.
+
+**Run in whole weeks.** Seven days minimum, fourteen preferable.
+
+### Contaminating with paid traffic
+
+If a campaign is running while the test runs, some of your traffic is paid, its mix may
+change mid-test, and paid users behave differently from organic ones.
+
+Either hold campaigns steady for the duration or accept that you are testing on a moving
+population. See [total installs is the wrong number to judge ASO
+on](/blog/organic-vs-paid-installs) — the same contamination problem, different symptom.
+
+### Testing two things at once
+
+If you change the icon and the screenshots together and the variant wins, you have learned
+that the combination beat the control. You have not learned which part did it, and you
+cannot carry the lesson to the next test.
+
+Test one element at a time unless you specifically want to test a whole redesign as a unit —
+which is a legitimate test, just a different question.
+
+### Reading a small effect as a real one
+
+A 2% relative improvement on a few thousand impressions is noise. Both tools will report it
+with a confidence figure that looks reassuring.
+
+Before starting, ask: **how large an effect would actually change my decision?** If a 2% lift
+would not change anything, do not run a test powered to detect one.
+
+### Believing the number transfers to installs
+
+A conversion win on your product page does not mean a proportional install win overall,
+because your product page is only part of the funnel and traffic mix shifts.
+
+Treat the test as evidence the variant is better, not as a forecast.
+
+## What is worth testing, in order
+
+Ordered by expected effect per unit of work:
+
+1. **First screenshot.** Most-seen asset after the icon and the one users act on. Test the
+   message, not the polish.
+2. **Icon.** High leverage and hard to iterate outside PPO — this is what makes Apple's
+   icon testing genuinely valuable.
+3. **Screenshot order.** Reordering costs no design time and frequently moves the number.
+4. **Portrait versus landscape** framing, or device frames versus full-bleed.
+5. **Caption copy.** Benefit-led versus feature-led is a reliable win for benefit-led, but
+   worth confirming for your audience.
+6. **Preview video** presence. Sometimes negative — a video can delay the install decision.
+7. **Short description (Play).** Indexed as well as read, so a win here is worth double.
+
+Notice what is missing: the iOS description, which is not indexed and rarely read. It is a
+poor use of a test slot.
+
+## Reading the result honestly
+
+When a test finishes, three outcomes are possible, and the third is the one people mishandle.
+
+**A clear win.** Ship it. Then re-test something else — a page that has been tested once is
+not optimised.
+
+**A clear loss.** Also valuable. You learned your assumption was wrong for a fraction of the
+cost of shipping it.
+
+**No detectable difference.** The most common outcome, and it is not a failure. It means the
+element you tested does not drive the decision as much as you assumed — which is itself
+worth knowing, and a reason to test something further up the list next time.
+
+What it does **not** mean is "run it longer until it says something". A test extended until
+it produces a result is not a test.
+
+## Testing when you do not have the traffic
+
+Below a few thousand impressions a week, native tests will not reach significance on
+realistic effect sizes in a reasonable time.
+
+At that volume the honest options are:
+
+- **Test bigger changes.** A complete screenshot rewrite may produce an effect large enough
+  to detect; a caption tweak will not.
+- **Test on paid traffic.** Run ad variants pointing to the same page; cheaper and faster
+  for creative direction, though the audience differs from organic search.
+- **Borrow evidence.** Look at what consistently wins across your category. Weaker than a
+  test, better than a coin flip.
+- **Accept qualitative input.** Five users describing what your first screenshot communicates
+  will find problems no A/B test would have detected.
+
+Pretending a underpowered test produced an answer is worse than any of these.
+
+## The short version
+
+- Play has real split testing; Apple's PPO is close and can test the icon.
+- Decide duration before starting and do not stop early — early stopping manufactures wins.
+- Run whole weeks; app traffic is strongly day-of-week.
+- Hold paid campaigns steady, or know your population is moving.
+- One element at a time, unless testing a redesign as a unit.
+- "No difference" is a legitimate result, not a reason to extend the test.
+- Below a few thousand weekly impressions, test big changes or do not test.
+
+---
+
+*Part of our [store listing](/blog/category/store-listing) cluster. Start with [App Store
+Listing Optimization](/blog/app-store-listing-optimization), and see [screenshot and
+creative testing](/blog/screenshot-and-creative-testing) for what to put in the variants.*

@@ -1,0 +1,27 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      // Two roots, in order. The web app's server source uses `@/` for its own
+      // imports, and the type-only `AppRouter` import drags that whole tree
+      // through the checker — so `@/server/...` has to resolve to the web app,
+      // not to this app's `src`, or every router key comes back as an error
+      // string instead of a procedure.
+      //
+      // Order matters: this app's own modules win, and anything unresolved
+      // falls through to the web app.
+      "@/*": ["./src/*", "../../src/*"],
+      "@aso/shared": ["../../packages/shared/src/index.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "../../packages/shared/src/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

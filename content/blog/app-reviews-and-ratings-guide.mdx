@@ -1,0 +1,136 @@
+---
+title: "App Reviews and Ratings: What They Actually Affect"
+description: "Ratings feed both ranking and conversion, but not equally and not immediately. How the two stores calculate them, when to ask, and how to handle review volume one person cannot read."
+date: "2026-08-21"
+category: "reviews"
+tags: ["reviews", "ratings", "conversion", "retention"]
+author: "The ASO team"
+---
+
+Ratings are the one part of a store listing you do not directly control, which is
+presumably why so much advice about them is either magical thinking or resignation. The
+mechanics are more specific than either.
+
+## What a rating actually affects
+
+Two separate things, on two different timescales.
+
+**Conversion, immediately.** The star rating and review count sit directly under your app
+name in search results. A user comparing three apps in a grid sees three ratings before
+reading a single word of any listing. This effect is large, immediate, and the main reason
+ratings matter.
+
+**Ranking, indirectly and slowly.** Both stores factor ratings into search ranking, but it
+is one input among many and it moves slowly. A rating improvement does not produce a rank
+jump next week.
+
+The practical consequence: **treat ratings as a conversion lever first.** The ranking
+benefit is real but too slow and too diluted to plan around.
+
+### The thresholds that matter
+
+Users do not read 4.2 and 4.4 as meaningfully different. They do read **below 4.0** as a
+warning, and **below 3.5** as a reason to pick something else. Those boundaries are where
+the conversion damage concentrates, which is why an app sliding from 4.1 to 3.9 loses more
+than the 0.2 suggests.
+
+## How the two stores calculate them
+
+The differences are large enough to change what you should do.
+
+**Apple** shows a rating per storefront, and lets you **reset it on a new version**. That
+reset is a genuine strategic tool: an app that fixed a bad release can start clean. It is
+also irreversible and discards the count that gave you social proof, so it is not a casual
+decision.
+
+**Google Play** weights **recent ratings more heavily** and computes a rolling figure. There
+is no reset. The upside is that a bad patch decays out of your score over time without any
+action; the downside is that a good historical average will not save you from a bad
+quarter.
+
+That asymmetry drives different tactics. On Play, recovery is a matter of accumulating
+recent good ratings, and time is on your side. On iOS, a damaged rating persists until you
+either out-volume it or reset.
+
+## When to ask
+
+Both platforms provide a native prompt — `SKStoreReviewController` on iOS, the In-App
+Review API on Play — and both **rate-limit it silently**. iOS allows roughly three prompts
+per user per year. Play's quota is undocumented and enforced without telling you.
+
+Two things follow, and the second is the one people get wrong:
+
+1. **You get very few asks. Spend them well.**
+2. **You cannot detect whether the prompt appeared.** Neither API tells you. Any analytics
+   event you fire around it is recording that you *called* the API, not that a user saw
+   anything.
+
+The timing that works is after a **moment of demonstrated success** — a completed task, a
+streak hit, a goal reached — never on launch, never mid-task, and never immediately after
+an error.
+
+**Do not gate the prompt on sentiment.** Asking "do you like the app?" and only showing the
+store prompt to people who say yes violates both stores' guidelines and is a review-manipulation
+finding waiting to happen. Ask everyone, or ask nobody.
+
+## Responding to reviews
+
+Both stores let developers reply publicly, and on Play a reply notifies the reviewer. Reply
+quality is visible to every future reader, which is the real audience.
+
+At any volume, reading every review stops being possible, and the useful triage order is:
+
+1. **Reviews reporting a bug you can fix.** Reply after the fix ships, naming the version.
+   This converts one-star reviews to updates more often than anything else.
+2. **Reviews with a factual error** — a feature they say is missing that exists. Correct it
+   politely; every future reader sees the correction.
+3. **Recent low ratings**, because on Play they weigh most.
+4. **Everything else.**
+
+What does not work: templated replies. They are visible as templates and read as
+indifference. A generic "Sorry to hear that, please contact support" attached to fifty
+different complaints is worse than no reply.
+
+For triaging at volume, see [responding to app
+reviews](/blog/responding-to-app-reviews).
+
+## What review text tells you beyond the rating
+
+Review text is the cheapest qualitative research available, and mostly ignored because it
+arrives unstructured.
+
+Two things worth extracting systematically:
+
+**Feature requests, counted.** One person asking for dark mode is an anecdote. Forty is a
+roadmap item. Nobody notices the difference by reading reviews one at a time.
+
+**The words users actually use.** Reviewers describe your app in their own language, which
+is frequently not yours — and their language is what they type into search. Review text is
+a legitimate keyword source, and one competitors are not mining.
+
+## What not to do
+
+- **Do not buy reviews.** Both stores detect it, and the penalty ranges from removal of the
+  reviews to removal of the app.
+- **Do not incentivise ratings.** Offering currency or features for a review breaches both
+  policies, and skews the signal you needed.
+- **Do not reset your iOS rating to escape a bad week.** You lose the review count too, and
+  a 4.6 from 40 ratings converts worse than a 4.2 from 8,000.
+- **Do not treat a rating dip as a rating problem.** It is usually a product event — a bad
+  release, a pricing change, a removed feature. Fix the cause.
+
+## The short version
+
+- Ratings affect conversion immediately and ranking slowly. Optimise for conversion.
+- Below 4.0 is where the damage concentrates.
+- Apple: per-storefront, resettable. Play: recency-weighted, no reset, self-healing.
+- Native prompts are silently rate-limited and you cannot tell if one appeared.
+- Never gate the prompt on sentiment — it breaches both stores' rules.
+- Reply to bug reports after shipping the fix, naming the version.
+- Review text is free keyword research in your users' own words.
+
+---
+
+*This guide is the pillar for our [reviews and ratings](/blog/category/reviews) cluster.
+For handling volume, read [responding to app
+reviews](/blog/responding-to-app-reviews).*

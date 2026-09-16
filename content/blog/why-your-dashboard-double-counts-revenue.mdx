@@ -1,0 +1,81 @@
+---
+title: "Why your dashboard double-counts revenue — and undercounts spend"
+description: "Two providers reporting the same measure need opposite treatment depending on whether they describe the same money or different money. Getting the rule backwards breaks the total either way."
+date: "2026-08-02"
+category: "analytics"
+tags: ["metrics", "measurement", "integrations"]
+author: "The ASO team"
+---
+
+Connect AdMob and Firebase to the same app and you now have two ad revenue figures. Connect Google
+Ads and Apple Search Ads and you have two spend figures.
+
+These look like the same situation. They need opposite handling, and a system that applies one
+rule to both will be wrong in one direction or the other.
+
+## Same money, described twice
+
+AdMob bills the ads. Firebase, through GA4, observes the ad revenue events the SDK reports. Both
+figures are legitimate and they will not match exactly — different attribution, different
+processing, a few percent apart.
+
+But they describe **one pot of money**. Sum them and your ad revenue roughly doubles.
+
+The fix is precedence: pick one source and drop the other. The order is "closest to the money
+wins" — the system that processes the transaction beats the analytics SDK observing it. AdMob over
+Firebase for ad revenue. The store console over Firebase for in-app purchases, because the store
+takes the payment.
+
+Two details matter in the implementation:
+
+**Choose once across the whole window, not per day.** Per-day selection fills gaps nicely and then
+switches sources mid-series. Because two providers measure subtly different things, that draws a
+step change into your chart that never happened in reality.
+
+**Apply it at query time, not at write time.** Keep every provider's raw rows. When someone asks
+why the number changed, the per-source history is the only thing that can answer.
+
+## Different money, same measure
+
+Google Ads and Apple Search Ads both report spend. That spend is on different networks, billed
+separately, for different clicks. It is not one pot described twice — it is two pots.
+
+Apply precedence here and you drop one network entirely. Connecting a second ad network would make
+your reported total spend go *down*, which is the exact mirror image of the double-count bug and
+considerably harder to notice, because a number getting smaller after you add a data source does
+not look like a data-source problem.
+
+Spend across ad networks is additive. So are paid installs and paid clicks.
+
+## The model that handles both
+
+Rank the sources in **tiers**. The first tier with any data wins; the rest are discarded. Sources
+*within* a winning tier are summed.
+
+- Ad revenue: `[[AdMob], [Firebase]]` — one or the other.
+- Spend: `[[Google Ads, Apple Search Ads]]` — both, added.
+
+Impressions show why the tiers need to be ordered rather than flat. Campaign impressions from the
+ad networks are additive with each other. Store-listing impressions from Play Console are a
+different measurement that happens to share a name — summing them with campaign impressions is
+meaningless. Different tiers: ad networks first, store console only when no ad network is
+connected.
+
+## The third question: how does it collapse?
+
+Precedence decides *which rows survive*. It does not decide how those rows combine across days and
+campaigns, and that is a separate decision that is easy to get wrong by inference.
+
+Summing works for counts and money. It is nonsense for ratios. Thirty days of a 40% conversion
+rate is not 1200%. CPI averaged across two networks is a cost per install; CPI summed across two
+networks is not a cost per anything.
+
+The tempting shortcut is to infer this from the unit — average the percents, sum the rest. It does
+not hold. ROAS is a percent that averages. CPI is a currency that averages. Installs is a plain
+number that sums. Declare it explicitly per metric, because with inference every newly added ratio
+metric gets silently summed until somebody notices a suspiciously large number.
+
+## The test that keeps it honest
+
+Assert that every metric has a declared source rule. An undeclared metric with two sources will
+silently resume double-counting, and it will look like growth.

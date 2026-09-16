@@ -1,0 +1,134 @@
+---
+title: "When to ask for a rating, and why you get so few chances"
+description: "Both stores silently rate-limit the review prompt and neither tells you whether it appeared. How to spend a handful of asks per user per year without breaking the rules."
+date: "2026-08-22"
+category: "reviews"
+tags: ["reviews", "ratings", "retention", "ios", "android"]
+author: "The ASO team"
+---
+
+The native rating prompt is the highest-converting way to get reviews, and you get very few
+of them. Both stores enforce quotas, neither tells you when a prompt was suppressed, and the
+most intuitive way to raise your average is against the rules.
+
+## The constraint nobody designs around
+
+**iOS** allows roughly three prompts per user per year via `SKStoreReviewController`. Call it
+more often and the extra calls do nothing — silently.
+
+**Google Play's** In-App Review API has an undocumented quota, also enforced silently.
+
+Two consequences follow, and the second is the one that breaks analytics:
+
+**You get very few asks.** Three a year means the timing decision matters more than the copy,
+the design, or anything else about the prompt.
+
+**You cannot tell whether the prompt appeared.** Neither API reports it. Both complete
+successfully whether the sheet was shown or suppressed.
+
+That second point is worth being explicit about, because teams instrument around it and get
+a number that means something other than what they think:
+
+> An analytics event fired next to the prompt call records that **you called the API**. It
+> does not record that a user saw anything.
+
+Any funnel built on that event — prompts shown, prompt-to-review rate — is measuring your
+own code path, not user behaviour. If you need a real denominator, you do not have one.
+
+## When to ask
+
+The principle: **ask after a moment of demonstrated success**, when the user has just
+experienced the app working.
+
+Good moments:
+
+- A task completed that took effort — a workout finished, a budget balanced, a document
+  exported.
+- A streak or milestone reached.
+- A returning session, several days in — someone who came back is someone who likes it.
+- Immediately after a support interaction that went well.
+
+Bad moments:
+
+- **On launch.** The user has not experienced anything yet.
+- **Mid-task.** You are interrupting the thing they opened the app to do.
+- **After an error**, obviously, but also after any friction — a failed sync, a slow load, a
+  paywall.
+- **Immediately after a purchase.** They just gave you money; asking for a favour in the same
+  breath reads badly.
+- **On a schedule.** "Day 7" ignores whether day 7 went well.
+
+The general test: *would this user, right now, describe the app positively to a friend?* If
+you cannot tell, do not spend an ask.
+
+## The rule people break
+
+**Do not gate the prompt on sentiment.**
+
+The pattern is familiar: ask "Enjoying the app?" first, show the store prompt to people who
+say yes, and route the others to a support form.
+
+This violates both stores' guidelines. It is review manipulation — you are filtering who is
+allowed to leave public feedback, which is precisely what the rating is supposed to measure.
+Enforcement is inconsistent, which is why the pattern persists, but the exposure is real and
+it escalates to app removal.
+
+Ask everyone, or ask nobody.
+
+There is a legitimate adjacent pattern: make it easy to reach support **everywhere else in
+the app**, so a frustrated user has an obvious non-store route. That is good product design
+and it is not gating, because it does not condition the prompt on the answer.
+
+## Raising the average without gating
+
+If your rating is lower than the product deserves, the honest levers are:
+
+**Fix the thing people are complaining about.** A rating is usually a product signal. Read
+the one-star reviews and count the causes; the top one or two typically explain most of the
+distribution.
+
+**Time the ask better.** Asking at genuinely good moments shifts who responds without
+filtering who is allowed to.
+
+**Reply to reviews.** On Play, replying notifies the reviewer, and updated reviews after a
+fix are common. See [responding to app reviews](/blog/responding-to-app-reviews).
+
+**Accumulate volume.** A 4.2 from 40 ratings is fragile; a 4.2 from 40,000 is stable and
+converts better than a 4.6 from 40. Volume is its own form of social proof.
+
+**On Play, wait.** Play weights recent ratings more heavily, so a bad period decays out on
+its own once the cause is fixed. This is the store working in your favour and it requires no
+action beyond fixing the product.
+
+**On iOS, consider a reset** — carefully. Apple lets you reset your rating on a new version.
+It clears a damaged score, and it discards your review count with it. Worth it after a
+genuinely bad release that has been fixed; not worth it for a mediocre average.
+
+## Measuring what you can
+
+Given you cannot measure prompts shown, measure the outcomes that are real:
+
+- **Ratings per thousand active users**, over time. Blunt, but it responds to timing changes.
+- **Rating distribution**, not just the average. A 4.3 made of fives and ones is a different
+  product problem from a 4.3 made of fours.
+- **Rating by app version.** This is what tells you a release caused a drop.
+- **Rating by storefront.** Averages across markets hide a single-market collapse.
+
+And be careful comparing periods across a version boundary on iOS if you have ever reset —
+the series is not continuous, and nothing in the data marks the discontinuity.
+
+## The short version
+
+- iOS allows roughly three prompts per user per year; Play's quota is undocumented. Both
+  suppress silently.
+- Neither API tells you whether the prompt appeared — any "prompts shown" metric is fiction.
+- Ask after demonstrated success, never on launch, mid-task, after friction, or on a
+  schedule.
+- Never gate the prompt on sentiment. It breaches both stores' rules.
+- Volume stabilises a rating; Play heals on its own; an iOS reset costs your review count.
+- Track distribution, version and storefront — not just the average.
+
+---
+
+*Part of our [reviews and ratings](/blog/category/reviews) cluster. Start with [App Reviews
+and Ratings: What They Actually Affect](/blog/app-reviews-and-ratings-guide).*

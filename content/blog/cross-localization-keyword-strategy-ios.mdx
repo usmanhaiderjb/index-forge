@@ -1,0 +1,96 @@
+---
+title: "Cross-Localization for iOS: Unlocking Secondary Locale Keyword Fields in 2026"
+description: "How iOS cross-localization works, which secondary languages index in major storefronts, and how to gain 160+ extra characters of indexed metadata per territory."
+date: "2026-09-08"
+category: "keyword-research"
+tags: ["keywords", "localization", "ios", "metadata"]
+author: "The ASO team"
+---
+
+On the iOS App Store, you are strictly limited to **30 characters for your Title, 30 characters for your Subtitle, and 100 characters for your Keyword field**. That gives you a maximum budget of 160 characters to capture search demand in any single country.
+
+Or does it?
+
+Through a mechanism known as **Cross-Localization**, Apple indexes metadata from secondary language localizations within specific national storefronts. For example, in the **United States App Store**, Apple indexes not only the primary `English (US)` localization, but also `Spanish (Mexico)`, `French (Canada)`, `Arabic`, `Russian`, and `Traditional Chinese`.
+
+By understanding which secondary locales index in each major storefront, you can expand your indexed keyword capacity from **160 characters to over 480 characters** in high-value markets.
+
+```
++-----------------------------------------------------------------------------------+
+|               UNITED STATES STOREFRONT CROSS-LOCALIZATION ARCHITECTURE            |
++-----------------------------------------------------------------------------------+
+|  Primary US Storefront Target (English User Base)                                 |
+|  ├── 1. English (US)        --> [Primary Title + High-Volume Category Seeds]       |
+|  ├── 2. Spanish (Mexico)    --> [English Long-Tail Keywords + Spanish Terms]       |
+|  ├── 3. French (Canada)     --> [English Synonym Seeds + French Localization]     |
+|  ├── 4. Arabic              --> [Technical Spec Keywords + Regional Terms]        |
+|  ├── 5. Russian             --> [Additional Niche Modifiers]                      |
+|  └── 6. Traditional Chinese --> [Broad Combinatorial Long-Tail Modifiers]         |
++-----------------------------------------------------------------------------------+
+|  Total Indexed Metadata Capacity: 6 Localizations x 160 chars = 960 CHARACTERS!  |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## How Cross-Localization Works Under the Hood
+
+When a user in the United States searches for an app, the App Store search engine evaluates keywords across all language packs that Apple has designated as active for the US storefront.
+
+If a user with their iPhone language set to English searches for `"budget planner for couples"`, Apple searches:
+1. Your `English (US)` Title, Subtitle, and Keyword field.
+2. Your `Spanish (Mexico)` Title, Subtitle, and Keyword field.
+3. Your `French (Canada)` Title, Subtitle, and Keyword field.
+
+If the word `"budget"` is in your `English (US)` title, and `"couples"` is in your `Spanish (Mexico)` keyword field, **Apple combines them across localizations and ranks your app for "budget planner for couples" in the US search results**.
+
+---
+
+## Global Storefront to Secondary Locale Mapping
+
+Below is the verified cross-localization matrix for the largest revenue storefronts in 2026:
+
+| Storefront (Country) | Primary Locale | Recognized Secondary Indexed Locales |
+| :--- | :--- | :--- |
+| **United States (`US`)** | `English (US)` | `Spanish (MX)`, `French (CA)`, `Arabic`, `Russian`, `Chinese (Traditional)`, `Vietnamese`, `Korean` |
+| **United Kingdom (`UK`)** | `English (UK)` | `English (US)`, `Arabic` |
+| **Canada (`CA`)** | `English (CA)` | `French (CA)`, `English (US)` |
+| **Germany (`DE`)** | `German` | `English (UK)`, `Turkish` |
+| **France (`FR`)** | `French` | `English (UK)`, `Arabic` |
+| **Japan (`JP`)** | `Japanese` | `English (US)` |
+| **Australia (`AU`)** | `English (AU)` | `English (UK)`, `English (US)`, `Japanese` |
+| **Brazil (`BR`)** | `Portuguese (BR)` | `English (UK)` |
+
+---
+
+## Step-by-Step Strategy: Maximizing US Storefront Reach
+
+To exploit cross-localization in the US without alienating international users who genuinely speak those languages:
+
+### Step 1: Keep Your Primary English (US) Clean
+Place your highest-volume, highest-converting English brand and category keywords in `English (US)`. This is what 90%+ of US users will actually see on their screens.
+
+### Step 2: Use Spanish (Mexico) for Secondary English Keywords
+In the US, Spanish (Mexico) is recognized by over 40 million native Spanish speakers, but it *also* indexes for English queries. Structure your `Spanish (MX)` listing with:
+* **Title**: High-converting Spanish title (for Spanish users) + English secondary keywords.
+* **Keywords**: A blend of high-intent Spanish translations (e.g. `presupuesto,gastos,dinero`) and English long-tail terms that did not fit in your primary US keyword field (e.g. `ledger,finances,bills,savings`).
+
+### Step 3: Prevent Keyword Duplication Across Locales
+Because Apple deduplicates tokens across localizations, repeating a keyword in both `English (US)` and `Spanish (MX)` adds zero ranking power. Ensure every single word in your secondary keyword fields is **100% unique**.
+
+```
+English (US) Keyword Field:
+"budget,tracker,expense,finance,money,wallet,spend,cash,bills,debt" (100 chars)
+
+Spanish (MX) Keyword Field:
+"presupuesto,gastos,dinero,ledger,receipt,saving,income,crypto,cost" (100 chars)
+```
+
+---
+
+## What NOT to Do (Common Pitfalls)
+
+1. **Do Not Put Nonsense English Titles in International Locales**: In countries like Canada, `French (CA)` is seen by millions of French-speaking Canadians. Writing a purely English title in `French (CA)` will destroy your conversion rate in Quebec. Use the visible Title/Subtitle for genuine local language translation, and use the 100-character invisible Keyword field for English overflow keywords.
+2. **Do Not Assume Google Play Works This Way**: Google Play localization operates strictly on user language headers. Google Play does **not** cross-index Spanish metadata for English users in the United States.
+
+To track your keyword positions across every international storefront, use our [Global Rank Tracking tool](/features/rank-tracking) or audit your multilingual performance with our [Market Intelligence engine](/features/market-trends).

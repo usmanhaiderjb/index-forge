@@ -1,0 +1,67 @@
+---
+title: "Keyword rank and chart position move for different reasons"
+description: "One measures relevance, the other measures velocity. Reading a chart drop as a ranking problem sends you optimising the wrong thing."
+date: "2026-08-06"
+category: "rank-tracking"
+tags: ["keywords", "rank-tracking", "measurement"]
+author: "The ASO team"
+---
+
+Two numbers get called "rank" and they are not the same measurement.
+
+**Keyword rank** is where your app appears when someone searches a term. It moves on relevance:
+metadata, conversion rate for that term, ratings, engagement.
+
+**Chart position** is where you appear in Top Free, Top Paid or Top Grossing for a category and
+country. It moves on *velocity* — downloads in a recent window, weighted toward the last few days.
+
+A campaign burst lifts chart position within a day and does almost nothing to keyword rank. A
+metadata change lifts keyword rank over a week or two and does nothing to chart position until the
+extra installs arrive. Confuse them and you will respond to a chart drop by rewriting your
+subtitle, which is roughly like responding to a flat tyre by changing the oil.
+
+## Null rank is not rank 100
+
+Rank tracking scans the top N results. If your app is not in them, the honest record is "not found
+in the top N", not "rank N+1" and not zero.
+
+This matters more than it sounds. Three failure modes come out of getting it wrong:
+
+**Zero-filling.** Plot a missing rank as 0 and, on an axis where 1 is best, you have drawn your
+app as the best result in the world on the day it fell out of the results entirely.
+
+**Missing rows.** Skip the write instead, and "we did not rank that day" becomes indistinguishable
+from "the scan did not run". Those need opposite responses.
+
+**Unrecorded scan depth.** Store the null but not how deep you looked, and the number is
+uninterpretable a month later. "Not in the top 10" and "not in the top 100" are very different
+facts. Worse, if someone changes the scan limit, every historical null silently changes meaning.
+
+Record the null *and* the depth alongside it. Then a gap on the chart is a real, readable event.
+
+## Track competitors on the same page
+
+When you scan a keyword's results you already have the whole result page in memory. Reading only
+your own position and discarding the rest throws away the more useful half of the data.
+
+Your rank moving from #12 to #15 means one thing if everyone moved down — someone new entered the
+category — and something else entirely if your competitors held position. The first is a market
+event. The second is about you.
+
+Capturing competitor positions from the scan you already ran costs nothing: no extra requests, and
+critically, it is the *same* result page your own rank was measured on. Fetching competitor ranks
+separately later gives you positions from a different page at a different moment, which is not
+comparable and quietly is not.
+
+One detail: record an explicit null when a tracked competitor is absent, rather than writing no
+row. A competitor dropping out of the top 100 is a finding worth seeing, and a missing row looks
+identical to a scan that never happened.
+
+## What to watch
+
+- **Keyword rank** for whether your listing is getting more relevant.
+- **Chart position** for whether download velocity is holding.
+- **Both, together with your competitors**, for whether a move was about you or about the market.
+
+The two numbers answer different questions. Reporting them under one word is how teams end up
+optimising the wrong surface for a month.

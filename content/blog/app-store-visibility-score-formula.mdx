@@ -1,0 +1,120 @@
+---
+title: "Building an App Store Visibility Index: Logarithmic Weighting of SERP Positions"
+description: "Why tracking average keyword rank is mathematically useless, how logarithmic visibility indices model real store discovery, and the formula to build your own."
+date: "2026-09-07"
+category: "rank-tracking"
+tags: ["rankings", "visibility", "measurement", "analytics"]
+author: "The ASO team"
+---
+
+Many executive reporting decks feature a chart titled: **"Average Keyword Ranking"**. It shows that across 100 tracked keywords, your app's average ranking improved from #38 to #32 over the past quarter.
+
+This metric is mathematically meaningless.
+
+To see why, consider two hypothetical apps:
+* **App A**: Ranks **#1** on 5 core keywords, and **#99** on 5 long-tail keywords.
+* **App B**: Ranks **#50** on all 10 keywords.
+
+Both apps have an **Average Rank of #50.0**.
+
+Yet **App A** generates 20,000 organic downloads per month from its five Rank #1 positions, while **App B** generates **zero downloads**, because nobody scrolls to position #50.
+
+In this guide, we break down why average rank fails, introduce the mathematical formula for a true **Logarithmic Visibility Score**, and show how to measure real store discoverability.
+
+```
++-----------------------------------------------------------------------------------+
+|               AVERAGE RANK VS LOGARITHMIC VISIBILITY SCORE                        |
++-----------------------------------------------------------------------------------+
+|  Keyword Profile          Average Rank         Calculated Visibility Score (0-100)|
++-----------------------------------------------------------------------------------+
+|  5 x Rank 1 + 5 x Rank 99     50.0               78.4 (High Organic Capture)      |
+|  10 x Rank 50                 50.0                1.2 (Virtually Zero Traffic)    |
++-----------------------------------------------------------------------------------+
+|  Conclusion: Average rank treats all positions linearly. Real search is LOGARITHMIC.|
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The Mathematical Flaw of Linear Ranking Metrics
+
+User attention on mobile devices does not decay linearly. It decays exponentially.
+
+The difference in search clicks between **Rank #1 (40% CTR)** and **Rank #2 (18% CTR)** is a massive **22 percentage point drop**.
+
+The difference in search clicks between **Rank #41 (0.02% CTR)** and **Rank #42 (0.01% CTR)** is a negligible **0.01 percentage point difference**.
+
+When you compute an arithmetic mean:
+
+```math
+\text{Average Rank} = \frac{1}{N} \sum_{i=1}^N \text{Rank}_i
+```
+
+You are giving the jump from #42 to #41 the exact same mathematical weight as the jump from #2 to #1. This distorts your analytics and hides real traffic moves.
+
+---
+
+## The Logarithmic Visibility Score Formula
+
+To build a metric that genuinely correlates with organic impressions and installs, we construct a **Weighted Visibility Index `(V)`** that:
+1. Assigns heavy non-linear weight to top-3 positions.
+2. Incorporates the **Search Popularity `(P_i)`** of each term.
+3. Decays rapidly to near-zero beyond position #20.
+
+```
+V = \frac{1}{\sum P_i} \sum_{i=1}^N \left( P_i \cdot \omega(\text{Rank}_i) \right)
+```
+
+Where the **Position Weight Function ($\omega$)** is defined as:
+
+```math
+\omega(r) = \begin{cases} 
+\frac{1}{\log_2(r + 1)} & \text{if } 1 \le r \le 30 \\
+0 & \text{if } r > 30 \text{ or unranked}
+\end{cases}
+```
+
+### Position Weight Decay Scale
+
+| SERP Rank (`r`) | Logarithmic Weight ($\omega$) | Relative Traffic Value |
+| :--- | :--- | :--- |
+| **Rank #1** | `1 / \log_2(2) = \mathbf{1.000}` | 100% of maximum potential |
+| **Rank #2** | `1 / \log_2(3) \approx \mathbf{0.631}` | ~63% traffic value |
+| **Rank #3** | `1 / \log_2(4) = \mathbf{0.500}` | 50% traffic value |
+| **Rank #5** | `1 / \log_2(6) \approx \mathbf{0.387}` | ~39% traffic value |
+| **Rank #10** | `1 / \log_2(11) \approx \mathbf{0.289}` | ~29% traffic value |
+| **Rank #20** | `1 / \log_2(21) \approx \mathbf{0.228}` | ~23% traffic value |
+| **Rank #31+** | $\mathbf{0.000}$ | 0% (Outside conversion viewport) |
+
+---
+
+## Why Search Volume Weighting is Mandatory
+
+A visibility index must also factor in the search volume of each keyword.
+
+Suppose your app gains 10 positions on two keywords:
+* **Keyword 1**: `"photo scanner"` (Search Popularity = 72, 85,000 monthly searches)
+* **Keyword 2**: `"vintage cyanotype filter"` (Search Popularity = 6, 40 monthly searches)
+
+Improving from Rank #4 to Rank #1 on `"photo scanner"` will drive thousands of new downloads per week. Improving from Rank #4 to Rank #1 on `"vintage cyanotype filter"` will drive maybe two downloads.
+
+A volume-weighted visibility index reflects this immediately, whereas unweighted tools report both as an identical "+3 position improvement".
+
+---
+
+## How to Track Visibility Across Categories and Competitors
+
+In the [IndexForge Market Trends engine](/features/market-trends) and [Competitor Intelligence dashboard](/features/competitor-intelligence), we compute this logarithmic visibility score daily for your app and every tracked competitor.
+
+```
+[Daily Visibility Share of Voice Report]
+Your App:       ████████████████████ 72.4 pts (+4.2)
+Competitor A:   ████████████████ 58.1 pts (-2.1)
+Competitor B:   ██████████ 34.6 pts (+0.8)
+Competitor C:   ████ 14.2 pts (0.0)
+```
+
+This allows you to answer the only question that matters for executive reporting:
+*"Did our app capture a larger share of category search demand this month than our competitors?"*
+
+To replace useless average rank charts with a real logarithmic visibility index, explore our [Rank Tracking feature](/features/rank-tracking).

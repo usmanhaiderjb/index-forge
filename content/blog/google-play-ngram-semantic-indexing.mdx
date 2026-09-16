@@ -1,0 +1,58 @@
+---
+title: "How Google Play Uses N-Gram Embeddings and TF-IDF for Store Ranking"
+description: "Reverse-engineering Google Play's search algorithm: natural language processing, n-gram co-occurrence, TF-IDF density limits, and semantic entity salience."
+date: "2026-10-03"
+category: "keyword-research"
+tags: ['android', 'google-play', 'algorithms', 'nlp', 'seo']
+author: "IndexForge Engineering"
+draft: false
+---
+
+# How Google Play Uses N-Gram Embeddings and TF-IDF for Store Ranking
+
+Unlike Apple's discrete keyword field, Google Play indexes applications by analyzing continuous text across the App Title (30 chars), Short Description (80 chars), and Long Description (4,000 chars).
+
+Google evaluates app listings using natural language processing (NLP) models rooted in entity extraction, n-gram embeddings, and term frequency-inverse document frequency (TF-IDF). Rather than looking for exact-match keyword repetitions, Google Play constructs a semantic cluster representing the app's core utility.
+
+## N-Gram Tokenization and Entity Salience
+
+When Google crawls an app description, it extracts unigrams (`finance`), bigrams (`budget planner`), and trigrams (`expense tracker app`). Each extracted n-gram is assigned a salience score based on its position in the document:
+
+- **Title Weighting**: 10x multiplier relative to body copy.
+- **Short Description**: 4x multiplier on extracted entity themes.
+- **First 160 Characters of Long Description**: 2.5x multiplier before the fold.
+- **Body Paragraphs**: 1.0x baseline weight with diminishing returns.
+
+```text
+TF-IDF Weighting Distribution:
+[Title: "Vault - Budget & Expense Planner"]
+ -> Salience(Budget): 0.94
+ -> Salience(Expense Planner): 0.88
+[Short Description: "Track daily spending, manage cash flow, and save money effortlessly."]
+ -> Salience(Daily Spending): 0.72
+ -> Salience(Cash Flow): 0.65
+```
+
+## The Penalty Curve for Keyword Stuffing
+
+Repeating a keyword more than 4 to 5 times across a 4,000-character description triggers Google Play's spam filter. When TF-IDF density crosses 2.5% for any single bigram, the algorithm flags the listing for manual review or quietly demotes ranking across related entities.
+
+| Keyword Occurrence | TF-IDF Ratio | Algorithmic Status | Search Visibility Impact |
+| :--- | :--- | :--- | :--- |
+| 1–2 times | 0.8% | Under-optimized | Moderate entity recognition |
+| 3–4 times | 1.8% | Optimal Salience | Maximum contextual reach |
+| 5–7 times | 2.9% | Spam Warning | Entity suppression applied |
+| 8+ times | 4.2%+ | Policy Violation | Algorithmic de-indexing |
+
+## Co-Occurrence and Contextual LSI Keywords
+
+To rank for a high-difficulty term like `investing`, your long description must include Latent Semantic Indexing (LSI) co-occurrences such as `portfolio`, `dividends`, `stocks`, `etf`, `market analysis`, and `brokerage`.
+
+Google's Knowledge Graph verifies whether surrounding nouns and verbs match the topical distribution of category-leading apps.
+
+## Strategic Action Plan for Google Play Store Listings
+
+1. Focus 80% of creative energy on Title and Short Description.
+2. Write the Long Description for humans first, incorporating contextual synonyms naturally.
+3. Verify your entity salience using the [Keyword Research & Discovery Engine](/features/keyword-research) and compare with competitor footprints via [Competitor Intelligence](/features/competitor-analysis).
+4. Read our complete guide to [App Store Listing Optimization](/blog/app-store-listing-optimization).

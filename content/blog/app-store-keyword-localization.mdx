@@ -1,0 +1,132 @@
+---
+title: "Localising keywords without translating your app"
+description: "Metadata localisation is the cheapest ranking work available, and it is not translation. How additional locales expand your iOS keyword budget, and why translated keywords rank badly."
+date: "2026-08-22"
+category: "keyword-research"
+tags: ["keywords", "localization", "ios", "android"]
+author: "The ASO team"
+---
+
+Most teams treat localisation as a product project — translate the app, then translate the
+store listing. That ordering leaves the cheapest ranking work in ASO untouched for years.
+
+**You can localise metadata without localising the app.** Users in a storefront search in
+their own language, find your listing in their own language, and install an app whose
+interface is in English. Whether that is a good experience depends on the app, but the
+ranking effect is immediate and the cost is a translator's afternoon.
+
+There is also a mechanical trick on iOS that most people miss entirely.
+
+## The iOS locale trick
+
+Apple indexes your keyword field **per localisation**. Add a localisation, and you get
+another 100 characters of keyword field for that storefront.
+
+More usefully: **some storefronts search across more than one locale's metadata.**
+
+The most-cited case is the US App Store, which indexes both `English (U.S.)` and
+`Spanish (Mexico)` metadata for users in the United States. Adding Spanish (Mexico)
+localisation gives you an extra 100 keyword characters that US users can match against —
+without changing what an English-speaking user sees.
+
+Similar pairings exist elsewhere. The mechanism is worth checking for your priority
+storefronts, because the effect is a straight expansion of your keyword budget in the
+market you already care about.
+
+**A caution:** Apple's locale indexing behaviour is not documented as a contract and has
+changed before. Verify it for your storefronts rather than taking any blog post — including
+this one — as a specification. Add the localisation, track the terms, and see whether they
+rank.
+
+## Translated keywords are usually wrong keywords
+
+This is where most localisation work goes astray.
+
+You cannot translate a keyword list. You have to **research the target market's keywords in
+that market's language**, because:
+
+- **People search differently in different languages.** The literal translation of "habit
+  tracker" may not be what German users type. They may use an English loanword. They may use
+  a phrase with no English equivalent.
+- **English loanwords are common in some categories and absent in others.** In many markets
+  "fitness" is searched in English while the rest of the phrase is local.
+- **Search volume distributes differently.** A term that is head in one market is long tail
+  in another.
+
+The process is the same as any keyword research, run again with the storefront set to the
+target market:
+
+1. Set your device or tool to the target storefront.
+2. Expand seeds through **that storefront's** autocomplete.
+3. Check what actually ranks there — often not the apps you expect.
+4. If you run ASA, segment the search-term report by storefront. This is the highest-quality
+   answer available, and it is per-market. See [Apple Search Ads is the only real keyword
+   volume data you can get](/blog/apple-search-ads-keyword-data).
+
+## Which markets first
+
+Rank your storefronts by **installs you already get**, not by market size in the abstract.
+
+A market already sending you organic installs with no localised metadata is telling you
+there is unserved demand. That is a better bet than a large market you have no presence in.
+
+Then weight by:
+
+- **Language reach.** Spanish and Portuguese cover many storefronts each; Japanese covers
+  one.
+- **Competitive density.** Smaller markets are frequently less contested, so the same work
+  buys more rank.
+- **Revenue per user**, if monetisation differs sharply by market.
+
+## What to localise, in order
+
+1. **Keyword field (iOS)** — pure ranking, invisible to users, no design work. Cheapest
+   possible win.
+2. **Title and subtitle** — ranking plus conversion. Watch length: German and Finnish
+   routinely overflow 30 characters, and truncation is worse than English.
+3. **Screenshot captions** — the highest-conversion localisation, and consistently
+   underrated. Translated captions on English UI screenshots still beat English captions.
+4. **Short description (Android)** — indexed and read.
+5. **Full description (Android)** — indexed in full, so it carries real ranking weight.
+6. **The app itself** — the expensive one, and the one to do last unless the app is
+   unusable without it.
+
+Note that items 1 through 5 are all metadata. None require a build.
+
+## The Play difference
+
+Google Play has no separate keyword field, so the localisation win is smaller and comes
+through the description instead — which is indexed in full, in each locale.
+
+Play also offers **automatic translation** of your listing. It is better than nothing for
+reach and worse than a translator for ranking, because it translates literally and literal
+translations are frequently not what people search. Treat it as a placeholder, not a
+strategy.
+
+## Measuring it
+
+Localised metadata is one of the few ASO changes with a clean measurement, because the
+effect is confined to a storefront.
+
+- Track rank **per storefront**, not averaged. An average across countries hides that you
+  climbed in Mexico and did nothing in Spain.
+- Watch **conversion rate per storefront** — localised screenshots move this fastest.
+- Give it weeks. Re-indexing is not instant, and low-volume storefronts are noisy.
+
+An average rank across markets is one of the least informative numbers in ASO. It moves
+when your traffic mix moves, even if nothing changed anywhere.
+
+## The short version
+
+- Metadata localisation does not require app localisation.
+- On iOS, extra localisations can expand your indexed keyword budget in markets you already
+  serve — verify the behaviour for your storefronts rather than assuming it.
+- Never translate a keyword list. Research the market in its own language.
+- Prioritise markets already sending you organic installs.
+- Keyword field first, screenshots close behind, the app itself last.
+- Track rank and conversion per storefront; averages hide everything.
+
+---
+
+*Part of our [keyword research](/blog/category/keyword-research) cluster. Start with [App
+Store Keyword Research: A Complete Guide](/blog/app-store-keyword-research).*

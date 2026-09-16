@@ -1,0 +1,158 @@
+---
+title: "App Store Analytics: Making Two Stores Agree"
+description: "Apple and Google count installs, revenue and active users differently, restate figures for days after the fact, and use the same words for different things. A guide to reconciling them without inventing numbers."
+date: "2026-08-21"
+category: "analytics"
+tags: ["metrics", "measurement", "attribution", "revenue"]
+author: "The ASO team"
+---
+
+Most app dashboards are wrong in small ways that compound. Not because the data is bad, but
+because two stores, an ads platform and an analytics SDK all report overlapping numbers
+using the same words for different things — and something has to decide which to believe.
+
+This guide covers where the discrepancies come from, which source to trust for what, and
+how to build a picture that survives someone checking it.
+
+## The same word, four different meanings
+
+"Installs" is the worst offender.
+
+| Source | What it counts |
+| --- | --- |
+| App Store Connect | **Units** — first-time downloads, excluding redownloads |
+| Play Console | **Installs** by user, or by device, or acquisitions — depending on the report |
+| Firebase / GA4 | `first_open` events, which fire when the app is *launched* |
+| Ad platform | attributed installs within a click window |
+
+These will never match, and it is not a bug in any of them:
+
+- A user who downloads and never opens the app is a store install and **not** a
+  `first_open`.
+- A user who reinstalls is a redownload in App Store Connect, possibly a new install in
+  Play, and not a new `first_open` if analytics keeps their identity.
+- An ad platform claims an install if it saw a click in the attribution window — including
+  clicks from users who would have installed anyway.
+
+**Pick one source per metric and stay with it.** A dashboard that sums installs across
+sources is not showing you more installs; it is showing you the same installs more than
+once.
+
+## The revenue double-count
+
+The commonest and most expensive version of this problem.
+
+If your app has in-app purchases *and* ads, and you pull revenue from the store *and* from
+your ad network, you may be adding two numbers that already overlap — or adding two that
+should never have been added at all.
+
+Store revenue is **proceeds**: after the platform commission, in the currency the store
+paid you, on the store's fiscal calendar. Ad revenue is usually **gross estimated
+earnings**, in your account currency, on a calendar day, and revised later.
+
+Adding proceeds to estimated earnings produces a total that means nothing. Worse, it looks
+plausible, so nobody checks it.
+
+The fix is to keep them separate, label them, and only combine them at the point of
+display, with the definition attached. See [why your dashboard double-counts
+revenue](/blog/why-your-dashboard-double-counts-revenue).
+
+## Store data is not final
+
+Both stores restate figures after publishing them.
+
+- Apple's data settles over roughly one to three days; early figures for the last day are
+  routinely incomplete.
+- Google's reports revise, particularly around refunds and cancellations.
+- Ad networks revise estimated earnings into finalised earnings, and the two differ.
+
+The practical consequences:
+
+1. **Never compare a partial day to a complete one.** Yesterday will always look worse than
+   the day before if yesterday is still filling in.
+2. **Re-fetch a window, do not append a day.** A pipeline that writes each day once and
+   never revisits it permanently records the first, incomplete answer.
+3. **Record when a figure was fetched.** Without it, you cannot tell a genuine change from a
+   restatement.
+
+More on this in [store data is not final](/blog/store-data-is-not-final).
+
+## Organic versus paid
+
+The single most important split in app analytics, and the one most often skipped.
+
+Total installs is the wrong number to judge ASO on, because paid spend lifts it regardless
+of whether your listing improved. If you cannot separate the two, you cannot tell whether
+your metadata work did anything.
+
+Neither store hands you a clean organic number, and the derivation is not simple
+subtraction — attribution windows overlap, some paid users would have found you anyway, and
+browse traffic sits awkwardly between the two.
+
+The workable approach is to derive organic as *total minus attributed paid*, keep the
+derivation visible, and label the result as derived rather than measured. See [total
+installs is the wrong number to judge ASO on](/blog/organic-vs-paid-installs).
+
+## Traffic sources
+
+Both stores report where an impression came from, and the categories are worth
+understanding because they respond to entirely different work.
+
+- **Search** — someone typed a term. This is what keyword optimisation moves.
+- **Browse** — someone found you through charts, category pages, or editorial. This
+  responds to velocity and featuring, not keywords.
+- **Referral** — a link from outside the store. This is your marketing, not your ASO.
+
+An app whose installs are 80% browse and one whose installs are 80% search need completely
+different work, and a single install number hides that entirely.
+
+The stores name these categories differently — Apple's Analytics Reports and Play Console
+use different labels for roughly the same buckets — so any cross-store view has to
+normalise them, and should say so.
+
+## Conversion rate, carefully
+
+Conversion rate is impressions to installs, and it is the cleanest measure of whether a
+listing works. Two cautions:
+
+**Never average an average.** Conversion rate for a period is total installs divided by
+total impressions for that period — not the mean of the daily rates. Averaging daily rates
+weights a quiet Sunday the same as a busy Monday.
+
+**Segment by traffic source.** Search converts far better than browse, because search users
+already told you what they wanted. A blended rate moves whenever your traffic mix moves,
+even if neither segment changed.
+
+## Building a dashboard that holds up
+
+What separates a dashboard people trust from one they quietly stop opening:
+
+1. **One source per metric**, chosen deliberately and recorded.
+2. **Source shown next to the number.** Any figure should be traceable to where it came
+   from, without asking anyone.
+3. **Derived numbers labelled as derived.** Organic installs are inferred, not measured, and
+   the difference matters when someone challenges the figure.
+4. **A gap is a gap.** If a connector has not reported, show that — do not draw a line to
+   zero. A missing day rendered as zero is the fastest way to lose trust in a chart.
+5. **Re-fetch a rolling window**, so restatements land.
+6. **Timezones stated.** Apple reports on its own fiscal calendar, Google on yours,
+   analytics on whatever you configured. A day boundary mismatch shifts every comparison by
+   a few percent, permanently.
+
+## The short version
+
+- "Installs" means four different things. Pick one source per metric.
+- Store proceeds and gross ad earnings are not addable.
+- Both stores restate data — re-fetch a window rather than appending a day.
+- Judge ASO on organic installs, and label organic as derived.
+- Search, browse and referral respond to different work; a single number hides that.
+- Never average an average, and always segment conversion rate by source.
+- Show the source beside the number, and show gaps as gaps.
+
+---
+
+*This guide is the pillar for our [analytics](/blog/category/analytics) cluster. For the
+revenue problem specifically, read [why your dashboard double-counts
+revenue](/blog/why-your-dashboard-double-counts-revenue). For the attribution split, read
+[total installs is the wrong number to judge ASO
+on](/blog/organic-vs-paid-installs).*

@@ -1,0 +1,108 @@
+---
+title: "Custom Product Pages (CPP) & Custom Store Listings: The 2026 Playbook"
+description: "How to deploy up to 35 Custom Product Pages on iOS and 50 Custom Store Listings on Google Play to align ad groups, keywords, and screenshots for 2x conversion rates."
+date: "2026-09-06"
+category: "store-listing"
+tags: ["conversion", "custom-product-pages", "ios", "android", "strategy"]
+author: "The ASO team"
+---
+
+For over a decade, App Store Optimization operated under a severe constraint: your app had **one default product page** for every visitor in a country.
+
+Whether a user searched for `"calorie counter"`, `"intermittent fasting"`, or `"keto meal plan"`, they saw the exact same icon, the exact same screenshots, and the exact same promotional text.
+
+Today, that one-size-fits-all era is dead.
+
+With **Custom Product Pages (CPP)** on iOS (up to 35 pages) and **Custom Store Listings (CSL)** on Google Play (up to 50 pages), you can create tailored product pages with dedicated screenshots, app previews, and promotional copy mapped directly to specific user personas, ad campaigns, and search intent.
+
+In this guide, we break down how to architect an enterprise CPP/CSL strategy that doubles paid campaign conversion rates and unlocks incremental organic discovery.
+
+```
++-----------------------------------------------------------------------------------+
+|               CUSTOM PRODUCT PAGE (CPP) CONVERSION FUNNEL                         |
++-----------------------------------------------------------------------------------+
+|  Traffic Source / Intent        Targeted Search Ads Ad Group    Custom Product Page|
++-----------------------------------------------------------------------------------+
+|  User A: Searches "Keto Diet"   ──► Ad Group: [Keto Keywords]  ──► CPP #1: Keto UI|
+|                                                                    (CVR: 38.4%)   |
+|  User B: Searches "Fasting"     ──► Ad Group: [Fasting Terms]  ──► CPP #2: Timer  |
+|                                                                    (CVR: 44.2%)   |
+|  User C: Generic Brand Search   ──► Default Store Listing     ──► Default Hub UI  |
+|                                                                    (CVR: 19.8%)   |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## What Can You Customize on a Custom Product Page?
+
+| Storefront Capability | Apple Custom Product Pages (iOS) | Google Custom Store Listings (Android) |
+| :--- | :--- | :--- |
+| **Maximum Pages** | **35 active variants** per app | **50 active variants** per app |
+| **Customizable Elements** | Screenshots, App Preview Videos, Promotional Text | App Icon, Title, Short Desc, Long Desc, Screenshots, Video |
+| **Unique URL Structure** | `https://apps.apple.com/app/id...?ppid=xxxx` | Direct link or campaign parameter routing |
+| **Apple Search Ads Integration** | Direct 1:1 mapping to Ad Groups & Keywords | Integrates with Google Ads App Campaigns |
+| **Organic Visibility** | Inactive in generic search (except Apple Search Ads) | Supports targeted URL campaign routing |
+
+---
+
+## The 4 High-Converting CPP Archetypes
+
+To structure your 35 CPP slots effectively, organize them into four strategic archetypes:
+
+```
+[35-Variant Custom Product Page Strategy]
+├── 1. Feature-Specific Archetypes (12 slots)
+│   └── Dedicated pages for each major sub-feature (e.g. "Barcode Scanner", "Meal Planner")
+├── 2. Audience / Persona Archetypes (10 slots)
+│   └── Segmented by demographic/use-case (e.g. "Bodybuilders", "Beginner Fasting", "Seniors")
+├── 3. Competitor Conquesting Archetypes (8 slots)
+│   └── Highlighting feature comparisons when bidding on competitor brand names
+└── 4. Seasonal & Campaign Archetypes (5 slots)
+    └── New Year resolution, Black Friday, summer fitness bursts
+```
+
+### 1. The Feature-Specific Archetype
+If your app is a broad utility (like a PDF editor), users search for narrow, distinct solutions:
+* User searches `"sign pdf document"` $\rightarrow$ Show Screenshot #1 with digital signature tool.
+* User searches `"compress pdf file"` $\rightarrow$ Show Screenshot #1 with 90% file size reduction meter.
+* User searches `"convert pdf to word"` $\rightarrow$ Show Screenshot #1 with instant DOCX export button.
+
+Matching the user's explicit query to the very first visual card in your screenshot carousel increases Tap-to-Install conversion by **40% to 65%**.
+
+### 2. The Competitor Conquesting Archetype
+When bidding on competitor brand keywords in Apple Search Ads, showing your standard generic screenshots leads to high bounce rates because the user was specifically looking for the competitor's interface.
+
+A dedicated Conquesting CPP should lead with:
+* **Screenshot 1**: *"Looking for a faster alternative to [Competitor Category]?"*
+* **Screenshot 2**: Instant migration / import capabilities (e.g. *"Import your data in 1 tap"*).
+* **Screenshot 3**: Feature superiority (e.g. *"No subscription required"*, *"Offline privacy"*).
+
+---
+
+## How to Set Up Custom Product Pages in App Store Connect
+
+```
+[App Store Connect Workflow]
+1. Navigate to: My Apps > [Your App] > Custom Product Pages
+2. Click "+" to create a new page
+3. Select starting baseline: Copy from existing default listing or start blank
+4. Upload custom screenshot assets (must pass standard App Store Review guidelines)
+5. Submit for review (CPPs can be submitted INDEPENDENTLY of binary releases!)
+6. Once approved, copy the unique PPID link or link directly in Apple Search Ads
+```
+
+> **Pro Tip**: You do NOT need to release a new app binary to create or update Custom Product Pages. You can submit new screenshot sets for review at any time, and approvals typically take less than 24 hours.
+
+---
+
+## Measuring CPP Performance and Attribution
+
+When running traffic through multiple Custom Product Pages, tracking performance requires reconciling Search Ads spend with App Store Connect conversion events.
+
+In our [Metrics Reconciliation Engine](/features/metrics-reconciliation), you can inspect:
+* **True CVR per CPP**: Install conversion rate per unique `ppid`.
+* **Blended CPA**: Cost per install per custom product page variant.
+* **Post-Install Retention**: D1, D7, and D30 retention segmented by the landing page the user installed from.
+
+To craft character-limit compliant copy for your CPP promotional text and subtitle variations, explore our [AI ASO Writer](/features/ai-aso-writer).

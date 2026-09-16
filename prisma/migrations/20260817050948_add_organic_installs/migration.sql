@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "MetricKey" ADD VALUE 'ORGANIC_INSTALLS';

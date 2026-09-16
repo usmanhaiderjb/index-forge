@@ -1,0 +1,62 @@
+name: Desktop installers
+
+# A macOS .app cannot be produced on Windows or Linux, so the mac half of this
+# runs on a mac runner. That is the whole reason this workflow exists: it is the
+# only way to get a .dmg out of a Windows development machine.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "desktop-v*"
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            command: dist:win
+            artifact: aso-windows
+            path: apps/desktop/release/*.exe
+          - os: macos-latest
+            label: macOS
+            command: dist:mac
+            artifact: aso-macos
+            path: apps/desktop/release/*.dmg
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # The desktop app has no runtime dependencies, but it lives in a workspace
+      # whose root install pulls in Prisma and sharp. `--ignore-scripts` skips
+      # their postinstall, none of which this build needs.
+      - run: npm ci --ignore-scripts
+
+      - run: npm run typecheck -w @aso/desktop
+
+      - run: npm run ${{ matrix.command }} -w @aso/desktop
+        env:
+          # Signing is skipped unless the secrets are present. An unsigned macOS
+          # build still packages; it just will not open without a right-click
+          # Open on the target machine.
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
+          if-no-files-found: error

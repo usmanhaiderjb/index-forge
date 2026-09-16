@@ -1,0 +1,75 @@
+---
+title: "The last three days of store data are a draft"
+description: "Stores restate recent figures, report in their own timezone, and omit zero rows. Every one of those will make a chart lie if you take the data at face value."
+date: "2026-07-16"
+category: "analytics"
+tags: ["metrics", "integrations", "measurement"]
+author: "The ASO team"
+---
+
+A dashboard that reads store APIs literally will show you things that did not happen. Not because
+the APIs are wrong, but because they have conventions that are easy to miss and expensive to get
+wrong.
+
+## Recent days get restated
+
+Apple and Google both revise the last few days as attribution settles and fraud filtering runs.
+Yesterday's install count is a draft. It usually moves by a small percentage; occasionally more.
+
+Two consequences:
+
+**Do not alert on yesterday alone.** A threshold rule reading a not-yet-settled figure will fire on
+a number that corrects itself by lunchtime. Evaluate over a window.
+
+**Re-fetch a trailing range on every sync.** Pulling only new days means the restatement never
+lands and your history quietly diverges from the console. Re-pull the last 7 to 30 days and upsert.
+
+## A missing day is not a zero day
+
+The most visible version of this bug: a dashboard where every chart dives to zero each morning.
+
+If today has not synced yet and your zero-fill runs to the current date, you have drawn a
+catastrophic crash that is actually just "the job has not run". Users see it, panic, and lose trust
+in the chart permanently.
+
+Interior gaps are different — a missing day between two populated days genuinely is a zero, or at
+least is safe to draw as one. It is the *trailing* edge that needs trimming to the last day you
+actually have data for.
+
+## Dates are not timezones
+
+Store APIs report `2026-08-01` meaning that calendar day in the report's own timezone. Parse that
+string with a naive date constructor and, on any server east of UTC, you get local midnight — which
+converts to July 31st.
+
+Every metric shifts one day earlier. The chart looks completely normal. The totals are right. The
+individual days are wrong, and it will only show up when someone compares a specific day to the
+console and finds it matches yesterday.
+
+Parse date-only strings as UTC explicitly. This is a two-line fix that is almost impossible to spot
+after the fact, because nothing about the output looks broken.
+
+## Zero rows are omitted
+
+Ad platforms generally do not send a row for a day with no spend. That absence means "no spend",
+not "no data" — but only inside the span the platform was actually reporting. Before your account
+existed, the same absence means nothing at all.
+
+If you are deriving anything from that data, the distinction decides whether a gap is a zero or an
+unknown. Treating a pre-account gap as a zero-spend day will make historical organic figures look
+better than they were.
+
+## Different definitions of the same word
+
+- Firebase counts **first opens**. Play Console counts **installs**. Related, not equal.
+- Apple's Search Ads "installs" includes **redownloads**, which is why it can exceed new downloads.
+- "Impressions" from an ad network means ad impressions. "Impressions" from Play Console means
+  store listing views. Same word, unrelated measurements.
+
+Any system that lets those share a metric key without recording which provider it came from will
+eventually add two of them together, and the result will look plausible.
+
+## The rule that covers all of it
+
+Record the source with every number. When two providers disagree — and they will — the question
+"which one is this?" needs an answer that does not involve reading the sync code.

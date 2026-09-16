@@ -1,0 +1,219 @@
+---
+title: "App Store Keyword Research: A Complete Guide"
+description: "How to find the terms worth ranking for on the App Store and Google Play — where the data actually comes from, how difficulty is estimated, and how to decide what earns a place in your metadata."
+date: "2026-08-21"
+category: "keyword-research"
+tags: ["keywords", "ios", "android", "strategy"]
+author: "The ASO team"
+---
+
+Keyword research for app stores is not keyword research for the web wearing different
+clothes. The stores publish no search volume, index different fields, and give you a
+different number of characters to work with. Most of what is written about ASO keywords
+skips straight to tactics without saying where any of the numbers came from — which is
+the part that decides whether the tactics are worth following.
+
+This guide covers the whole process: where keyword data comes from, what "search volume"
+means when nobody publishes it, how difficulty is estimated, and how to turn a list of
+candidates into a metadata decision you can defend.
+
+## The uncomfortable starting point: nobody publishes search volume
+
+**Neither Apple nor Google publishes app store search volume.** Not through an API, not
+in App Store Connect, not in Play Console. Every search volume figure you have ever seen
+in an ASO tool is an estimate derived from indirect signals, however confidently it is
+presented.
+
+That is not a reason to give up on the number. It is a reason to know which signals
+produced it, because the signals differ enormously in quality.
+
+### What can actually be observed
+
+| Signal | What it tells you | How good it is |
+| --- | --- | --- |
+| Store autocomplete | which terms the store suggests, **in popularity order** | strong, free, directly observable |
+| Autocomplete position | that "habit tracker" outranks "habit journal" | strong for *relative* demand |
+| Search result count | how many apps compete for a term | competitive density, not demand |
+| Top charts | which apps rank in a category | context, not keyword demand |
+| Apple Search Ads | **measured impressions per term** | ground truth, but only for your own account |
+
+The single most useful free signal is **autocomplete ordering**. When you type "hab" into
+the App Store, the suggestions come back ranked by how often people search them. That
+ordering is a real popularity signal that Apple and Google hand you for nothing.
+
+What it supports is a *relative index*: this term is searched more than that one. What it
+does not support is "18,400 searches per month". You cannot derive an absolute figure from
+an ordering, and any tool that shows you one has either calibrated against real
+impression data or invented it.
+
+### The one source of ground truth
+
+**Apple Search Ads search-term reports contain measured impressions per term per
+storefront.** Not an estimate — actual counts, from Apple.
+
+If you run even a small ASA campaign, you are holding real volume data for the terms you
+bid on. It is the only true volume number available to anyone outside Apple, and it is
+worth mining before you trust any third-party estimate. Export your search-term report and
+compare it against whatever your ASO tool claims. The gaps are instructive.
+
+## How to build a keyword list
+
+### Start from seeds, not from a blank page
+
+Take ten to twenty words that describe what your app does in the language a *user* would
+use, not the language your team uses internally. "Habit tracker", not "behavioural
+adherence engine".
+
+Then expand each seed through store autocomplete. Type the seed, note what comes back, and
+type each of those. This is the same mechanism a crawler uses at scale, and doing it by
+hand for twenty seeds takes an afternoon and teaches you more about your category than any
+report will.
+
+### Use the space trick for multi-word terms
+
+Typing "habit" returns terms starting with "habit". Typing **"habit t"** returns "habit
+tracker", "habit tracker widget", "habit tracker for kids" — the multi-word searches you
+would otherwise never surface. Walking `seed + space + letter` through the alphabet is
+where the long tail lives.
+
+### Mine your competitors' metadata
+
+Apps ranking in your category have made keyword decisions, and those decisions are
+visible. Their titles and subtitles are the terms they chose to spend their most valuable
+characters on.
+
+A word of caution: **frequency across competitors is a supply signal, not a demand
+signal.** It tells you what other developers believe, which is not the same as what users
+search. Treat it as a candidate generator, then validate each candidate against
+autocomplete.
+
+### Watch for the boilerplate trap
+
+Tokenise enough descriptions and you will find "contact us", "get started" and "free
+download" appearing across half the category. They are shared because they are boilerplate,
+not because they are keywords. A term is only interesting if a developer put it somewhere
+the store actually indexes — which brings us to the biggest structural difference between
+the two stores.
+
+## iOS and Android index different things
+
+This is the difference that invalidates most generic ASO advice.
+
+**The App Store indexes:**
+
+- App name (30 characters)
+- Subtitle (30 characters)
+- Keyword field (100 characters, invisible to users)
+- In-app purchase names
+- Developer name
+
+**The App Store does not index your description.** Write it for conversion, because it
+does nothing for discovery.
+
+**Google Play indexes:**
+
+- App title (30 characters)
+- Short description (80 characters)
+- **Full description (4,000 characters)**
+- Developer name
+
+Play has no separate keyword field. The description carries that load instead, which is
+why Play listings read the way they do.
+
+The practical consequence: **a term that appears once anywhere in your iOS metadata is
+indexed.** Repetition does nothing. Apple even combines your title, subtitle and keyword
+field into a single index and generates combinations — so "habit" in your title and
+"tracker" in your keywords means you can rank for "habit tracker" without spending
+characters on the phrase.
+
+On Play, repetition has a mild effect and over-repetition is penalised. Aim for natural
+usage two or three times across the description, not keyword stuffing.
+
+## Judging difficulty
+
+No store publishes keyword difficulty either. It is always a model, and a reasonable one
+looks at the apps that currently rank:
+
+- **How strong are the incumbents?** An app with two million ratings at 4.8 stars is not
+  losing its position to a new entrant.
+- **How deep is the result set?** A term returning eight apps is a different proposition
+  from one returning two hundred.
+
+The useful output is not a precise number, it is a stable ordering. If difficulty says
+term A is harder than term B, and that holds consistently, you can prioritise. That is all
+prioritisation needs.
+
+### The trap: a thin result set is not an easy win
+
+A term returning zero or two apps looks maximally easy by any difficulty model — nothing
+is defending it. But **nothing ranks for it because nobody searches it.** An empty result
+set usually means the term is a typo, a brand string, or a phrase no human types.
+
+Before you celebrate an "easy" keyword, check that a market exists at all. Ten or more
+competing apps is a reasonable floor for a term to be worth targeting.
+
+## Turning a list into a decision
+
+You now have candidates with a relative demand index and a difficulty estimate. The
+decision rule is:
+
+> **Chase terms with the highest demand you can realistically rank for**, given how
+> established your app is.
+
+In practice that means an opportunity score — demand discounted by difficulty. But three
+adjustments matter more than the formula:
+
+1. **Discount by evidence.** A term you observed once is a guess. A term confirmed across
+   several independent queries, on both stores, is a finding. Do not let a single
+   observation outrank a well-evidenced one just because its raw score is higher.
+2. **Discount by market size.** As above — no competitors means no searchers.
+3. **Weight by relevance, ruthlessly.** Ranking for a term your app does not serve produces
+   installs that churn immediately, and both stores factor post-install engagement into
+   ranking. An irrelevant keyword win is a ranking loss on a delay.
+
+### Where to spend your characters
+
+Given limited space, spend it in this order:
+
+1. **Title** — the highest-weighted field on both stores. One or two head terms.
+2. **Subtitle (iOS) / short description (Android)** — your second-strongest terms.
+3. **Keyword field (iOS)** — everything else, comma-separated, no spaces, no repeats of
+   words already in your title or subtitle, no plurals of words you already have.
+4. **Description (Android only)** — natural usage of your secondary terms.
+
+Never repeat a word across iOS fields. Apple indexes the union, so "fitness" in your title
+and again in your keyword field wastes characters you could have spent on another term.
+
+## Measuring whether it worked
+
+Change your metadata, then wait. Both stores take days to re-index and re-rank, and
+ranking is noisy at the best of times.
+
+Two rules keep the measurement honest:
+
+- **Change one thing at a time**, or you will not know which change moved the number.
+- **Separate organic from paid.** A campaign launched in the same week will lift your
+  installs whether or not your keywords improved.
+
+Track rank per keyword daily, and record how deep the scan went. A keyword that "fell off
+the chart" and one that fell out of a top-100 scan look identical in a report that does not
+record its own depth.
+
+## The short version
+
+- Nobody publishes search volume; every figure is an estimate, so know its source.
+- Autocomplete ordering is the best free demand signal, and it supports a *relative* index.
+- Apple Search Ads impressions are the only ground truth available to you.
+- iOS indexes title, subtitle and keyword field — **not** the description. Play indexes the
+  description heavily.
+- Difficulty is a model. Use it for ordering, not as a measurement.
+- An empty result set is a dead term, not an easy one.
+- Relevance beats volume, because irrelevant installs churn and churn costs ranking.
+
+---
+
+*This guide is the pillar for our [keyword research](/blog/category/keyword-research)
+cluster. For the field-by-field differences between the two stores, read [iOS and Android
+index different things](/blog/ios-vs-android-keyword-indexing). For why a keyword rank and
+a chart position move for different reasons, read [keyword rank and chart
+position](/blog/keyword-rank-vs-chart-position).*

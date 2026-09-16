@@ -1,0 +1,24 @@
+{
+  "name": "@aso/desktop",
+  "productName": "IndexForge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IndexForge desktop client for Windows and macOS",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "npm run build && electron .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:all": "npm run build && electron-builder --win --mac"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "electron": "43.4.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^5.9.3"
+  },
+  "author": "IndexForge"
+}

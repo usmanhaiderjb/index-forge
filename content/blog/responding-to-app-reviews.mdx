@@ -1,0 +1,69 @@
+---
+title: "Review replies: the limits, the timing, and the one that cannot be undone"
+description: "Both stores let you reply. They have different character limits, different edit rules, and one shared risk that a naive retry turns a timeout into two published replies."
+date: "2026-07-28"
+category: "reviews"
+tags: ["reviews", "reputation", "app-store", "google-play"]
+author: "The ASO team"
+---
+
+Replying to reviews is the highest-leverage reputation work available, and the mechanics differ
+enough between stores that a single implementation gets one of them wrong.
+
+## The limits are not the same
+
+Google Play caps developer replies at **350 characters**. Apple allows close to **6000**.
+
+That is a seventeen-fold difference, and a UI that shows one limit for both is actively
+misleading. Showing an iOS reply "342 / 350" characters while Apple would happily accept sixteen
+times that will produce cramped, unhelpful replies for no reason. Showing Android "1200 / 5970"
+lets someone write a reply that will be rejected on submit.
+
+Each store gets its own limit, and where a store's limit is not known, fall back to the more
+conservative one rather than guessing high.
+
+## Editing works differently
+
+On Google Play you can edit a reply after publishing. On the App Store you can update a response,
+but the change is user-visible and Apple may re-review it.
+
+The practical rule: treat every reply as permanent when you write it, and rely on editing only as
+damage control.
+
+## The failure mode nobody plans for
+
+Publishing a reply is a write to a public, user-visible surface. Which makes it exactly the kind of
+operation that must not be retried blindly.
+
+A request times out. The reply may have been published; it may not. A generic retry wrapper — the
+same one that is entirely correct for a metrics fetch — now publishes a second reply, or overwrites
+a first one, on a public review page. Users see it. It cannot be quietly rolled back.
+
+Read-only calls retry freely. Publishing calls fail loudly on an ambiguous response and let a human
+decide. If a reply implementation shares its retry policy with the metrics fetcher, that is a bug
+waiting for a slow day at the store API.
+
+## Themes beat averages
+
+An average rating that moves from 4.4 to 4.2 tells you something is wrong and nothing about what.
+The reviews themselves say "crashes on open after the last update", but only if you read all of
+them, every day.
+
+Classifying reviews into themes turns the rating drop into a specific report — a spike in reviews
+tagged `crash` and `onboarding` in the days after a release. That is a bug ticket, not a metric.
+
+Alert on the themes as well as the number. A rating average moves slowly by construction: by the
+time it has fallen far enough to trip a threshold, the cause is weeks old and the reviews
+describing it have scrolled away.
+
+## What to actually reply to
+
+In order:
+
+1. **One and two-star reviews describing a specific, fixed bug.** The highest-value reply there
+   is: users often update their rating.
+2. **Reviews asking a question with an answer.** Public, so the next person with the same question
+   finds it.
+3. **Detailed positive reviews.** Cheap, and it signals an active developer to everyone reading.
+
+Skip the generic thank-you on every five-star review. It reads as automated, because it is.

@@ -1,0 +1,1574 @@
+// ASO — App Store Optimization platform
+// Postgres. Multi-tenant: every business row hangs off an Organization.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum Platform {
+  IOS
+  ANDROID
+}
+
+/// Third-party systems we can connect to.
+/// A message from the public contact form. Deliberately outside the
+/// organization tree: the sender has no account, and forcing one would mean
+/// the only way to ask a question is to sign up first.
+model ContactMessage {
+  id        String               @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  topic     ContactTopic         @default(GENERAL)
+  message   String               @db.Text
+  status    ContactMessageStatus @default(NEW)
+  /// Kept for abuse handling and rate limiting, not for analytics.
+  ipHash    String?
+  userAgent String?
+  createdAt DateTime             @default(now())
+  handledAt DateTime?
+
+  @@index([status, createdAt])
+  @@index([ipHash, createdAt])
+  @@map("contact_messages")
+}
+
+enum ContactTopic {
+  GENERAL
+  SALES
+  SUPPORT
+  PARTNERSHIP
+}
+
+enum ContactMessageStatus {
+  NEW
+  READ
+  REPLIED
+  SPAM
+}
+
+enum Provider {
+  FIREBASE
+  ADMOB
+  GOOGLE_ADS
+  PLAY_CONSOLE
+  APP_STORE_CONNECT
+  APPLE_SEARCH_ADS
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACTIVE
+  /// Token refresh failed or scopes were revoked upstream.
+  NEEDS_REAUTH
+  /// Repeated hard failures; the scheduler skips it.
+  ERROR
+  DISABLED
+}
+
+/// Where a metric value came from. Kept distinct from Provider because
+/// store analytics and scraped data have no Provider.
+enum MetricSource {
+  FIREBASE
+  ADMOB
+  GOOGLE_ADS
+  PLAY_CONSOLE
+  APP_STORE_CONNECT
+  APPLE_SEARCH_ADS
+  ASO_SCRAPER
+  DERIVED
+}
+
+enum MetricKey {
+  // Acquisition
+  IMPRESSIONS
+  STORE_PAGE_VIEWS
+  INSTALLS
+  UNINSTALLS
+  CONVERSION_RATE
+  // Engagement
+  ACTIVE_USERS_DAILY
+  ACTIVE_USERS_MONTHLY
+  SESSIONS
+  SESSION_DURATION_AVG
+  RETENTION_D1
+  RETENTION_D7
+  RETENTION_D30
+  CRASH_FREE_USERS
+  // Monetization
+  AD_REVENUE
+  AD_IMPRESSIONS
+  AD_CLICKS
+  AD_ECPM
+  AD_FILL_RATE
+  IAP_REVENUE
+  TOTAL_REVENUE
+  ARPDAU
+  // Paid acquisition
+  SPEND
+  PAID_INSTALLS
+  /// Total installs minus paid installs. Derived, never reported by a store.
+  ORGANIC_INSTALLS
+  /// Taps on an ad. Distinct from AD_CLICKS, which is monetization: this is
+  /// what we pay for, that is what we earn from.
+  PAID_CLICKS
+  CPI
+  CPC
+  ROAS
+  // Store reputation
+  RATING_AVERAGE
+  RATING_COUNT
+  REVIEW_COUNT
+}
+
+enum SyncStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+enum Severity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum InsightType {
+  KEYWORD_OPPORTUNITY
+  METADATA_GAP
+  COMPETITOR_MOVE
+  REVIEW_THEME
+  CONVERSION_DROP
+  REVENUE_ANOMALY
+  RANK_CHANGE
+  GENERAL
+}
+
+enum RecommendationStatus {
+  OPEN
+  IN_PROGRESS
+  APPLIED
+  DISMISSED
+}
+
+enum ListingField {
+  TITLE
+  SUBTITLE
+  /// iOS only: the hidden 100-char keyword field.
+  KEYWORDS
+  SHORT_DESCRIPTION
+  FULL_DESCRIPTION
+  PROMOTIONAL_TEXT
+  WHATS_NEW
+}
+
+enum AlertComparator {
+  GT
+  LT
+  PCT_CHANGE_UP
+  PCT_CHANGE_DOWN
+}
+
+enum AlertStatus {
+  TRIGGERED
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+/// The store charts an app can appear in.
+enum ChartType {
+  TOP_FREE
+  TOP_PAID
+  TOP_GROSSING
+}
+
+enum KeywordSource {
+  MANUAL
+  SUGGESTED
+  COMPETITOR
+  AI
+  STORE_AUTOCOMPLETE
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js v5 (Prisma adapter shape)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts            Account[]
+  sessions            Session[]
+  memberships         Membership[]
+  auditLogs           AuditLog[]
+  invitesSent         Invite[]                @relation("InviteInviter")
+  deviceSessions      DeviceSession[]
+  deviceTokens        DeviceToken[]
+  notificationPrefs   NotificationPreference?
+
+  @@map("users")
+}
+
+/// A signed-in mobile device.
+///
+/// Separate from the Auth.js `Session` table because native apps cannot carry
+/// an httpOnly cookie: they hold a short-lived access token plus a rotating
+/// refresh token, and both need to be revocable per device without touching
+/// the user's browser sessions.
+///
+/// One row per device, not per sign-in — re-authenticating on the same device
+/// rotates its tokens rather than accumulating sessions nobody can audit.
+model DeviceSession {
+  id         String         @id @default(cuid())
+  userId     String
+  platform   DevicePlatform
+  /// User-facing label in the device list: "Pixel 9", "iPhone 16 Pro".
+  deviceName String?
+  appVersion String?
+  lastUsedAt DateTime       @default(now())
+  createdAt  DateTime       @default(now())
+  /// Set on sign-out, on admin revocation, or automatically when a refresh
+  /// token is replayed. See RefreshToken.
+  revokedAt  DateTime?
+  /// Why it was revoked, so a support conversation has an answer.
+  revokedFor String?
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens   RefreshToken[]
+  pushToken DeviceToken?
+
+  @@index([userId, revokedAt])
+  @@map("device_sessions")
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+}
+
+/// A push token for one device.
+///
+/// Separate from DeviceSession because the two have different lifecycles: a
+/// user can turn notifications off without signing out, and the OS reissues
+/// tokens on its own schedule. One per session — re-registering replaces.
+model DeviceToken {
+  id              String    @id @default(cuid())
+  deviceSessionId String    @unique
+  userId          String
+  /// ExponentPushToken[...]. Unique so a reinstall replaces rather than
+  /// duplicating, which would send the same alert to one phone twice.
+  token           String    @unique
+  platform        DevicePlatform
+  /// Set when Expo's receipt says DeviceNotRegistered. Without this we would
+  /// send to dead tokens forever and never know the delivery rate is a lie.
+  invalidatedAt   DateTime?
+  invalidReason   String?
+  lastSentAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  session DeviceSession @relation(fields: [deviceSessionId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, invalidatedAt])
+  @@map("device_tokens")
+}
+
+/// Per-user push preferences.
+///
+/// Shipped with push rather than after it. An alerting product that wakes
+/// someone at 3am for a routine wobble gets its notifications disabled once,
+/// permanently, and no later feature recovers that.
+model NotificationPreference {
+  id             String        @id @default(cuid())
+  userId         String        @unique
+  pushEnabled    Boolean       @default(true)
+  /// Nothing below this severity is pushed. Email and webhook are unaffected.
+  minSeverity    Severity      @default(MEDIUM)
+  /// Local-time quiet hours, inclusive start, exclusive end. 22 → 8 spans
+  /// midnight, which the delivery check handles explicitly.
+  quietHoursFrom Int?
+  quietHoursTo   Int?
+  /// IANA zone the quiet hours are evaluated in. Without it "22:00" is
+  /// meaningless for anyone not on the server's clock.
+  timeZone       String        @default("UTC")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+/// One issued refresh token. A new row per rotation rather than an update in
+/// place, because detecting replay requires the *used* token to still exist —
+/// overwriting the hash would make a stolen token indistinguishable from an
+/// unknown one.
+///
+/// Presenting a token whose `usedAt` is already set means the token was
+/// captured, so the whole DeviceSession is revoked rather than just this call.
+/// That is the OAuth 2.0 BCP behaviour for refresh token replay.
+model RefreshToken {
+  id          String    @id @default(cuid())
+  sessionId   String
+  /// SHA-256 of the token. The raw value is returned once and never stored,
+  /// the same rule as ApiKey — a database dump must not yield a usable credential.
+  hashedToken String    @unique
+  expiresAt   DateTime
+  /// Set the moment it is exchanged. A second presentation is a replay.
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  session DeviceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, usedAt])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  imageUrl  String?
+  /// Free-form plan marker. Billing lives outside this schema for now.
+  plan      String   @default("free")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships     Membership[]
+  invites         Invite[]
+  apps            App[]
+  connections     Connection[]
+  alertRules      AlertRule[]
+  auditLogs       AuditLog[]
+  apiKeys         ApiKey[]
+  digests         Digest[]
+  aiInsights      AiInsight[]
+  aiUsage         AiUsage[]
+
+  pushCredentials PushCredential[]
+  pushCampaigns   PushCampaign[]
+
+  @@map("organizations")
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role     @default(MEMBER)
+  createdAt      DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+model Invite {
+  id             String    @id @default(cuid())
+  organizationId String
+  email          String
+  role           Role      @default(MEMBER)
+  token          String    @unique
+  invitedById    String?
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User?        @relation("InviteInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, email])
+  @@map("invites")
+}
+
+// ---------------------------------------------------------------------------
+// Apps
+// ---------------------------------------------------------------------------
+
+model App {
+  id             String   @id @default(cuid())
+  organizationId String
+  platform       Platform
+  /// iOS: numeric track id (e.g. "389801252"). Android: package name.
+  storeId        String
+  bundleId       String?
+  name           String
+  developer      String?
+  iconUrl        String?
+  /// Primary storefront/country code, ISO-3166 alpha-2, lowercase.
+  country        String   @default("us")
+  /// Primary listing locale, e.g. "en-US".
+  locale         String   @default("en-US")
+  category       String?
+  currentVersion String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  locales         AppLocale[]
+  resourceLinks   ResourceLink[]
+  metrics         MetricPoint[]
+  listings        StoreListing[]
+  chartRanks      ChartRank[]
+  keywords        Keyword[]
+  competitors     Competitor[]
+  reviews         Review[]
+  insights        AiInsight[]
+  recommendations AiRecommendation[]
+  suggestions     MetadataSuggestion[]
+  alertRules      AlertRule[]
+  syncRuns        SyncRun[]
+
+  @@unique([organizationId, platform, storeId])
+  @@index([organizationId])
+  pushCredential PushCredential?
+  pushDeliveries PushDelivery[]
+
+  @@map("apps")
+}
+
+/// A storefront an app is tracked in.
+///
+/// The store serves different text per country/language pair, and an app that
+/// ranks in the US can be invisible in Brazil purely because nobody localized
+/// the keyword field. Tracking is therefore per storefront, not per app.
+model AppLocale {
+  id        String   @id @default(cuid())
+  appId     String
+  /// ISO-3166 alpha-2, lowercase — the storefront.
+  country   String
+  /// BCP-47, e.g. "pt-BR" — the language the listing is written in.
+  locale    String
+  /// The storefront the app's headline numbers refer to. Exactly one per app.
+  isPrimary Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, country, locale])
+  @@index([appId, isActive])
+  @@map("app_locales")
+}
+
+// ---------------------------------------------------------------------------
+// Connections to third-party accounts
+// ---------------------------------------------------------------------------
+
+model Connection {
+  id             String           @id @default(cuid())
+  organizationId String
+  provider       Provider
+  status         ConnectionStatus @default(PENDING)
+  /// Human label, e.g. "Acme Google Workspace".
+  label          String?
+  /// Upstream account identity: Google account email, Ads customer id,
+  /// App Store Connect issuer id.
+  externalId     String?
+  externalName   String?
+  /// AES-256-GCM ciphertext of a JSON credential blob. Never leaves the server.
+  credentials    String?          @db.Text
+  scopes         String[]         @default([])
+  /// Access-token expiry, when the provider issues short-lived tokens.
+  expiresAt      DateTime?
+  lastSyncedAt   DateTime?
+  lastError      String?          @db.Text
+  errorCount     Int              @default(0)
+  createdById    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  resourceLinks ResourceLink[]
+  syncRuns      SyncRun[]
+
+  @@unique([organizationId, provider, externalId])
+  @@index([organizationId, provider])
+  @@map("connections")
+}
+
+/// Binds one of our Apps to a specific resource inside a connected account:
+/// a Firebase app id, an AdMob app id, a Google Ads customer id, a Play
+/// package name, or an App Store Connect app id.
+model ResourceLink {
+  id           String   @id @default(cuid())
+  connectionId String
+  appId        String
+  /// Provider-native resource identifier.
+  externalId   String
+  /// Optional secondary identifier, e.g. GA4 property id for Firebase.
+  externalRef  String?
+  displayName  String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  connection Connection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  app        App        @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, appId, externalId])
+  @@index([appId])
+  @@map("resource_links")
+}
+
+model SyncRun {
+  id           String     @id @default(cuid())
+  connectionId String?
+  appId        String?
+  /// Job name, e.g. "firebase.metrics" or "aso.ranks".
+  job          String
+  status       SyncStatus @default(QUEUED)
+  startedAt    DateTime   @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  recordsRead  Int        @default(0)
+  recordsWrote Int        @default(0)
+  error        String?    @db.Text
+  meta         Json?
+
+  connection Connection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  app        App?        @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, startedAt])
+  @@index([appId, startedAt])
+  @@index([job, status])
+  @@map("sync_runs")
+}
+
+// ---------------------------------------------------------------------------
+// Metrics
+// ---------------------------------------------------------------------------
+
+/// One value, one app, one day, one source. Dimensions (country, ad unit,
+/// campaign, channel) live in `dimension` so the table stays narrow and the
+/// unique index stays meaningful.
+model MetricPoint {
+  id        String       @id @default(cuid())
+  appId     String
+  date      DateTime     @db.Date
+  source    MetricSource
+  metric    MetricKey
+  value     Float
+  /// Stable dimension key, "" when the value is app-wide. Format:
+  /// "country=us|campaign=123".
+  dimension String       @default("")
+  currency  String?
+  meta      Json?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, date, source, metric, dimension])
+  @@index([appId, metric, date])
+  @@index([appId, date])
+  @@map("metric_points")
+}
+
+// ---------------------------------------------------------------------------
+// Store listings and ASO
+// ---------------------------------------------------------------------------
+
+/// Point-in-time snapshot of what the store shows. One row per app/locale/day
+/// so metadata changes are diffable against rank and conversion movement.
+model StoreListing {
+  id               String   @id @default(cuid())
+  appId            String
+  locale           String
+  country          String
+  capturedAt       DateTime @default(now())
+  title            String?
+  subtitle         String?
+  /// iOS keyword field, comma separated, 100 chars max.
+  keywordField     String?
+  shortDescription String?  @db.Text
+  fullDescription  String?  @db.Text
+  promotionalText  String?  @db.Text
+  whatsNew         String?  @db.Text
+  version          String?
+  screenshotCount  Int?
+  /// Ordered screenshot URLs as the store serves them. Order is the point —
+  /// the first two carry most of the conversion effect.
+  screenshotUrls   String[] @default([])
+  hasVideo         Boolean  @default(false)
+  iconUrl          String?
+  ratingAverage    Float?
+  ratingCount      Int?
+  price            Float?
+  contentRating    String?
+  /// SHA-256 of the concatenated text fields; lets the worker skip no-op writes.
+  contentHash      String
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId, locale, capturedAt])
+  @@map("store_listings")
+}
+
+model Keyword {
+  id        String        @id @default(cuid())
+  appId     String
+  term      String
+  country   String        @default("us")
+  locale    String        @default("en-US")
+  source    KeywordSource @default(MANUAL)
+  isTracked Boolean       @default(true)
+  createdAt DateTime      @default(now())
+
+  app             App                     @relation(fields: [appId], references: [id], onDelete: Cascade)
+  ranks           KeywordRank[]
+  metrics         KeywordMetric[]
+  competitorRanks KeywordCompetitorRank[]
+
+  @@unique([appId, term, country])
+  @@index([appId, isTracked])
+  @@map("keywords")
+}
+
+/// Daily rank of the tracked app for a keyword. `rank` is null when the app
+/// is not in the top N scanned results.
+model KeywordRank {
+  id         String   @id @default(cuid())
+  keywordId  String
+  date       DateTime @db.Date
+  rank       Int?
+  /// Rank on the previous captured day, for cheap delta rendering.
+  prevRank   Int?
+  /// How deep the scan went. Without it a null rank is unreadable: "not in the
+  /// top 100" and "not in the top 10" are different facts, and a later change
+  /// to the scan limit would silently rewrite the meaning of old rows.
+  scanDepth  Int      @default(100)
+  capturedAt DateTime @default(now())
+
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@unique([keywordId, date])
+  @@index([keywordId, date])
+  @@map("keyword_ranks")
+}
+
+/// Where a tracked competitor sits for one of our keywords, on one day.
+///
+/// The rank scan already fetches the whole result page; this records the
+/// positions that were previously read once and thrown away. Only tracked
+/// competitors are stored — persisting all 100 results per keyword per day
+/// would be a row explosion for entries nobody asked to watch.
+model KeywordCompetitorRank {
+  id           String   @id @default(cuid())
+  keywordId    String
+  competitorId String
+  date         DateTime @db.Date
+  /// Null when the competitor is outside `scanDepth`, same convention as KeywordRank.
+  rank         Int?
+  prevRank     Int?
+  scanDepth    Int      @default(100)
+  capturedAt   DateTime @default(now())
+
+  keyword    Keyword    @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  competitor Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@unique([keywordId, competitorId, date])
+  @@index([keywordId, date])
+  @@index([competitorId, date])
+  @@map("keyword_competitor_ranks")
+}
+
+/// Market-side keyword attributes, independent of which app is tracking it.
+model KeywordMetric {
+  id           String   @id @default(cuid())
+  keywordId    String
+  date         DateTime @db.Date
+  /// 0-100 search-volume proxy.
+  popularity   Float?
+  /// 0-100 how hard it is to rank.
+  difficulty   Float?
+  /// Number of apps returned by the store for this term.
+  resultCount  Int?
+  /// popularity vs difficulty, higher is a better bet. 0-100.
+  opportunity  Float?
+  createdAt    DateTime @default(now())
+
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@unique([keywordId, date])
+  @@map("keyword_metrics")
+}
+
+/// Daily position in a store chart.
+///
+/// Chart position is a different signal from keyword rank: it reflects
+/// download velocity rather than relevance, so a listing edit moves keyword
+/// rank while a feature or a campaign moves the chart.
+model ChartRank {
+  id         String    @id @default(cuid())
+  appId      String
+  date       DateTime  @db.Date
+  country    String
+  chart      ChartType
+  /// Store category id, or the literal "overall" for the all-categories chart.
+  ///
+  /// Deliberately not nullable: Postgres treats every NULL in a unique index
+  /// as distinct, so a nullable column here would let the overall chart insert
+  /// a duplicate row every day instead of upserting.
+  category   String    @default("overall")
+  /// Null when the app is outside the scanned depth — distinct from no row,
+  /// which means the chart was never checked that day.
+  rank       Int?
+  prevRank   Int?
+  /// How deep the scan went, so a null rank can be read as "outside the top N".
+  scanDepth  Int
+  capturedAt DateTime  @default(now())
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, date, country, chart, category])
+  @@index([appId, chart, date])
+  @@map("chart_ranks")
+}
+
+model Competitor {
+  id           String   @id @default(cuid())
+  appId        String
+  platform     Platform
+  storeId      String
+  name         String
+  developer    String?
+  iconUrl      String?
+  country      String   @default("us")
+  /// Set when we added it automatically from search-result overlap.
+  autoDetected Boolean  @default(false)
+  isTracked    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  app          App                     @relation(fields: [appId], references: [id], onDelete: Cascade)
+  snapshots    CompetitorSnapshot[]
+  keywordRanks KeywordCompetitorRank[]
+
+  @@unique([appId, platform, storeId, country])
+  @@index([appId])
+  @@map("competitors")
+}
+
+model CompetitorSnapshot {
+  id            String   @id @default(cuid())
+  competitorId  String
+  capturedAt    DateTime @default(now())
+  title         String?
+  subtitle      String?
+  description   String?  @db.Text
+  version       String?
+  ratingAverage Float?
+  ratingCount   Int?
+  /// Category rank when the store exposes one.
+  categoryRank  Int?
+  contentHash   String
+
+  competitor Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@index([competitorId, capturedAt])
+  @@map("competitor_snapshots")
+}
+
+model Review {
+  id            String     @id @default(cuid())
+  appId         String
+  /// Provider-native review id, used for idempotent ingest.
+  externalId    String
+  source        MetricSource
+  rating        Int
+  title         String?
+  body          String?    @db.Text
+  authorName    String?
+  locale        String?
+  country       String?
+  appVersion    String?
+  device        String?
+  submittedAt   DateTime
+  developerReply String?   @db.Text
+  repliedAt     DateTime?
+  sentiment     Sentiment?
+  /// AI-extracted themes, e.g. ["crash", "onboarding"].
+  topics        String[]   @default([])
+  analyzedAt    DateTime?
+  createdAt     DateTime   @default(now())
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, source, externalId])
+  @@index([appId, submittedAt])
+  @@index([appId, sentiment])
+  @@map("reviews")
+}
+
+// ---------------------------------------------------------------------------
+// AI layer
+// ---------------------------------------------------------------------------
+
+model AiInsight {
+  id             String      @id @default(cuid())
+  organizationId String
+  appId          String?
+  type           InsightType
+  severity       Severity    @default(INFO)
+  title          String
+  summary        String      @db.Text
+  /// Markdown body.
+  detail         String?     @db.Text
+  /// Structured evidence the model was given, kept for auditability.
+  evidence       Json?
+  model          String?
+  isRead         Boolean     @default(false)
+  isPinned       Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  app             App?               @relation(fields: [appId], references: [id], onDelete: Cascade)
+  recommendations AiRecommendation[]
+
+  @@index([organizationId, createdAt])
+  @@index([appId, type])
+  @@map("ai_insights")
+}
+
+model AiRecommendation {
+  id         String               @id @default(cuid())
+  appId      String
+  insightId  String?
+  category   String
+  title      String
+  rationale  String               @db.Text
+  /// 1 (low) to 5 (high).
+  impact     Int                  @default(3)
+  /// 1 (easy) to 5 (hard).
+  effort     Int                  @default(3)
+  priority   Int                  @default(0)
+  /// Ordered, concrete steps: [{ step, detail }].
+  actions    Json?
+  status     RecommendationStatus @default(OPEN)
+  appliedAt  DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  app     App        @relation(fields: [appId], references: [id], onDelete: Cascade)
+  insight AiInsight? @relation(fields: [insightId], references: [id], onDelete: SetNull)
+
+  @@index([appId, status, priority])
+  @@map("ai_recommendations")
+}
+
+model MetadataSuggestion {
+  id         String               @id @default(cuid())
+  appId      String
+  locale     String
+  field      ListingField
+  current    String?              @db.Text
+  suggested  String               @db.Text
+  rationale  String?              @db.Text
+  /// Keywords this variant is designed to pick up.
+  targetKeywords String[]         @default([])
+  charCount  Int
+  charLimit  Int
+  status     RecommendationStatus @default(OPEN)
+  model      String?
+  createdAt  DateTime             @default(now())
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId, locale, field])
+  @@map("metadata_suggestions")
+}
+
+/// Per-org token accounting so AI cost is attributable and rate-limitable.
+model AiUsage {
+  id             String   @id @default(cuid())
+  organizationId String
+  feature        String
+  model          String
+  inputTokens    Int      @default(0)
+  outputTokens   Int      @default(0)
+  costUsd        Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@map("ai_usage")
+}
+
+// ---------------------------------------------------------------------------
+// Alerting, audit, API access
+// ---------------------------------------------------------------------------
+
+model AlertRule {
+  id             String          @id @default(cuid())
+  organizationId String
+  appId          String?
+  name           String
+  metric         MetricKey
+  comparator     AlertComparator
+  threshold      Float
+  /// Lookback in days for the comparison window.
+  windowDays     Int             @default(1)
+  severity       Severity        @default(MEDIUM)
+  /// { "email": ["a@b.com"], "webhook": "https://..." }
+  channels       Json?
+  isEnabled      Boolean         @default(true)
+  lastEvaluatedAt DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  app          App?         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  events       AlertEvent[]
+
+  @@index([organizationId, isEnabled])
+  @@map("alert_rules")
+}
+
+model AlertEvent {
+  id          String      @id @default(cuid())
+  ruleId      String
+  status      AlertStatus @default(TRIGGERED)
+  value       Float
+  baseline    Float?
+  message     String      @db.Text
+  triggeredAt DateTime    @default(now())
+  resolvedAt  DateTime?
+
+  /// Delivery is tracked separately from the alert firing: an alert that fired
+  /// but never reached anyone is a different failure from one that never fired.
+  deliveredAt      DateTime?
+  deliveryAttempts Int       @default(0)
+  deliveryError    String?   @db.Text
+  /// Per-channel outcome: { "webhook": "ok", "email": "no transport" }.
+  deliveryLog      Json?
+  /// True for events raised by the "send test" button, so a test never looks
+  /// like a real incident in the list.
+  isTest           Boolean   @default(false)
+
+  rule AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId, triggeredAt])
+  @@map("alert_events")
+}
+
+enum DigestCadence {
+  DAILY
+  WEEKLY
+}
+
+/// A recurring summary sent to the same channels alerts use.
+///
+/// Distinct from alerts by intent: an alert fires when something crosses a
+/// line, a digest arrives whether or not anything happened. Both are needed —
+/// a week where nothing fired is itself information.
+model Digest {
+  id             String        @id @default(cuid())
+  organizationId String
+  name           String
+  cadence        DigestCadence @default(WEEKLY)
+  /// Hour of day in UTC to send, 0-23.
+  sendHourUtc    Int           @default(8)
+  /// Empty means every active app in the organization.
+  appIds         String[]      @default([])
+  /// Same shape as AlertRule.channels.
+  channels       Json?
+  isEnabled      Boolean       @default(true)
+  lastSentAt     DateTime?
+  lastError      String?       @db.Text
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isEnabled])
+  @@map("digests")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorId        String?
+  action         String
+  targetType     String?
+  targetId       String?
+  meta           Json?
+  ip             String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
+
+model ApiKey {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  /// SHA-256 of the key. The plaintext is shown once at creation.
+  hashedKey      String    @unique
+  prefix         String
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("api_keys")
+}
+
+// ---------------------------------------------------------------------------
+// Push campaigns
+//
+// Sending Firebase Cloud Messaging notifications to many apps from one place.
+// See docs/PUSH-PLAN.md — in particular why a topic, not "all users", is the
+// primary target: the public FCM API has no send-to-everyone endpoint.
+// ---------------------------------------------------------------------------
+
+enum PushCredentialStatus {
+  UNVERIFIED
+  ACTIVE
+  /// The key was rejected. Rotate it in Google Cloud and upload the new one.
+  INVALID
+}
+
+enum PushTarget {
+  TOPIC
+  CONDITION
+  TOKENS
+}
+
+enum CampaignStatus {
+  DRAFT
+  QUEUED
+  SENDING
+  /// Every delivery succeeded.
+  SENT
+  /// Some apps succeeded and some did not. Distinct from SENT on purpose —
+  /// "sent" for a campaign where three of twelve apps failed is a lie.
+  PARTIAL
+  FAILED
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  /// The app has no push credential, so it was never attempted.
+  SKIPPED
+}
+
+/// One Firebase project's service account, bound to one of our Apps.
+model PushCredential {
+  id             String               @id @default(cuid())
+  organizationId String
+  appId          String               @unique
+  /// From the service account JSON. Part of the FCM send URL.
+  projectId      String
+  /// Identifies which key this is, so a user can match it in Google Cloud.
+  /// Safe to display; the private half never leaves the server.
+  clientEmail    String
+  /// AES-256-GCM ciphertext of the whole service account JSON.
+  credentials    String               @db.Text
+  status         PushCredentialStatus @default(UNVERIFIED)
+  lastError      String?              @db.Text
+  lastVerifiedAt DateTime?
+  createdById    String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  app          App          @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@map("push_credentials")
+}
+
+model PushCampaign {
+  id             String         @id @default(cuid())
+  organizationId String
+  title          String
+  body           String         @db.Text
+  imageUrl       String?
+  /// Where a tap goes. Sent as a data payload the client app reads; FCM has no
+  /// notion of a link on its own.
+  linkUrl        String?
+  target         PushTarget     @default(TOPIC)
+  /// The topic name, the condition expression, or a token list marker.
+  targetValue    String
+  status         CampaignStatus @default(DRAFT)
+  createdById    String?
+  sentAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  deliveries   PushDelivery[]
+
+  @@index([organizationId, createdAt])
+  @@map("push_campaigns")
+}
+
+/// One row per app per campaign, so partial failure is legible: eleven apps
+/// sent, one has an expired key, and the UI can name which.
+model PushDelivery {
+  id         String         @id @default(cuid())
+  campaignId String
+  appId      String
+  status     DeliveryStatus @default(PENDING)
+  /// FCM's `name` for the accepted message. Worth keeping for support tickets.
+  messageId  String?
+  error      String?        @db.Text
+  attempts   Int            @default(0)
+  sentAt     DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  campaign PushCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  app      App          @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, appId])
+  @@index([appId])
+  @@map("push_deliveries")
+}
+
+// ---------------------------------------------------------------------------
+// Keyword corpus
+//
+// A global keyword database, separate from the per-app `Keyword` model: this is
+// the term universe, not one customer's tracked list. See
+// docs/KEYWORD-DATABASE.md — in particular why volume is ordinal before it is
+// ever a monthly figure.
+// ---------------------------------------------------------------------------
+
+enum TermDiscovery {
+  /// Found by expanding a prefix through store autocomplete.
+  PREFIX_CRAWL
+  /// Tokenised out of a ranked app's title, subtitle or description.
+  METADATA_MINING
+  /// A customer tracked it, so it is real whether or not we found it.
+  CUSTOMER
+  /// Returned as a related or "also searched" term.
+  RELATED
+}
+
+enum SignalSource {
+  /// Position within the store's own ordered suggestions. Lower is more popular.
+  SUGGEST_RANK
+  /// How many suggestions for a prefix contained the term.
+  SUGGEST_CONTAINS
+  /// Apps returned for the term — competitive density, not demand.
+  RESULT_COUNT
+  /// The term appears in a charting app's metadata.
+  CHART_PRESENCE
+  /// Measured impressions from a customer's own Apple Search Ads, opted in.
+  ASA_IMPRESSIONS
+}
+
+enum EstimateKind {
+  /// Inferred from indirect signals. Never presented as a measurement.
+  ESTIMATED
+  /// A real count, from a customer's own advertising data.
+  MEASURED
+}
+
+enum Confidence {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// One term in one storefront. The corpus itself.
+/// An app seen in the wild — from a chart or a search result page.
+///
+/// Deliberately separate from `App`, which is an app a customer owns and
+/// tracks. Nothing here belongs to an organisation; it is market data.
+model MarketApp {
+  id          String    @id @default(cuid())
+  platform    Platform
+  storeId     String
+  country     String    @default("us")
+  name        String
+  developer   String?
+  category    String?
+  /// As reported by the store. Play updates this on some major releases, so it
+  /// identifies new apps only approximately.
+  releasedAt  DateTime?
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+
+  snapshots MarketAppSnapshot[]
+  reviews   MarketReview[]
+
+  @@unique([platform, storeId, country])
+  @@index([category, releasedAt])
+  @@map("market_apps")
+}
+
+/// A point-in-time reading of one app's public counters.
+///
+/// Append-only, like KeywordSignal. Velocity is derived from two readings and
+/// must stay traceable to them, so nothing here is ever updated in place.
+model MarketAppSnapshot {
+  id            String   @id @default(cuid())
+  marketAppId   String
+  /// The install proxy. Never presented as an install count — see
+  /// docs/MARKET-RADAR.md §2.
+  ratingCount   Int?
+  ratingAverage Float?
+  /// Android only, e.g. "1,000,000+". Bucketed, so it moves rarely.
+  installsText  String?
+  /// Position in the category chart at capture time, when it came from a chart
+  /// sweep. Chart movement is a velocity signal in its own right, and unlike
+  /// rating count it can fall.
+  chartRank     Int?
+  capturedAt    DateTime @default(now())
+
+  app MarketApp @relation(fields: [marketAppId], references: [id], onDelete: Cascade)
+
+  @@index([marketAppId, capturedAt])
+  @@map("market_app_snapshots")
+}
+
+/// A public review of a market app.
+///
+/// **No author name.** The store returns one, and it is dropped on ingest: for
+/// an app we do not represent, the reviewer has no relationship with us and
+/// their name serves no purpose here. The customer-facing `Review` model keeps
+/// `authorName` because replying to your own reviewer needs it.
+model MarketReview {
+  id          String    @id @default(cuid())
+  marketAppId String
+  /// Store-native id, so a review is ingested and classified exactly once.
+  externalId  String
+  rating      Int
+  body        String?   @db.Text
+  locale      String?
+  appVersion  String?
+  submittedAt DateTime
+  /// Themes an LLM extracted. Inference, labelled as such wherever displayed.
+  themes      String[]  @default([])
+  analyzedAt  DateTime?
+
+  app MarketApp @relation(fields: [marketAppId], references: [id], onDelete: Cascade)
+
+  @@unique([marketAppId, externalId])
+  @@index([marketAppId, rating])
+  @@index([analyzedAt])
+  @@map("market_reviews")
+}
+
+/// A niche: a keyword or a store category, with its market signals attached.
+model MarketNiche {
+  id       String    @id @default(cuid())
+  kind     NicheKind
+  /// A corpus term, or a store category id.
+  label    String
+  country  String    @default("us")
+  platform Platform
+
+  /// Percent change over the window. Null until two observations exist.
+  demandChange Float?
+  supplyChange Float?
+  quadrant     NicheQuadrant?
+  newApps      Int      @default(0)
+  /// Human-readable, e.g. "demand +34%, 12 to 19 apps, over 28 days".
+  method       String
+  windowDays   Int      @default(28)
+  computedAt   DateTime @default(now())
+
+  themes NicheTheme[]
+
+  @@unique([kind, label, country, platform])
+  @@index([quadrant])
+  @@map("market_niches")
+}
+
+/// A theme aggregated across every app in a niche — the actual finding.
+model NicheTheme {
+  id      String    @id @default(cuid())
+  nicheId String
+  kind    ThemeKind
+  /// Short, e.g. "no offline mode".
+  label   String
+  /// How many DISTINCT apps in the niche carry this. The number that separates
+  /// a market gap from one app's problem, and the only sound way to rank.
+  appCount     Int
+  mentionCount Int
+  /// Mean rating of the reviews it came from. Low means people left over it.
+  meanRating   Float
+  /// Review ids backing it. A theme that cannot produce its evidence is not
+  /// displayed at all.
+  evidenceIds  String[] @default([])
+  computedAt   DateTime @default(now())
+
+  niche MarketNiche @relation(fields: [nicheId], references: [id], onDelete: Cascade)
+
+  @@index([nicheId, appCount])
+  @@map("niche_themes")
+}
+
+enum NicheKind {
+  TERM
+  CATEGORY
+}
+
+enum NicheQuadrant {
+  /// Demand rising, supply flat. The unserved case.
+  GAP
+  /// Both rising. A real market with real competition.
+  HEATING
+  /// Neither moving.
+  SETTLED
+  /// Supply rising, demand flat. Filling up.
+  CROWDING
+}
+
+enum ThemeKind {
+  MISSING_FEATURE
+  DEFECT
+  MONETISATION
+  CHURN_REASON
+}
+
+model KeywordTerm {
+  id          String        @id @default(cuid())
+  /// Normalised: trimmed, lowercased, whitespace collapsed.
+  term        String
+  country     String        @default("us")
+  locale      String        @default("en-US")
+  discovery   TermDiscovery
+  firstSeenAt DateTime      @default(now())
+  /// Bumped every time a crawl sees it again — a term that stops being
+  /// suggested has stopped being searched.
+  lastSeenAt  DateTime      @default(now())
+
+  signals     KeywordSignal[]
+  estimate    KeywordVolumeEstimate?
+  competition KeywordCompetition[]
+
+  @@unique([term, country])
+  @@index([country, lastSeenAt])
+  @@index([country, term])
+  @@map("keyword_terms")
+}
+
+/// One observation about a term. Append-only.
+///
+/// Kept rather than folded into a running average so any estimate can be traced
+/// back to what produced it — the same rule MetricPoint follows.
+model KeywordSignal {
+  id         String       @id @default(cuid())
+  termId     String
+  source     SignalSource
+  /// Which store produced it. Null on rows written before the corpus went
+  /// multi-store; demand is shared across platforms but difficulty is not.
+  platform   Platform?
+  value      Float
+  /// The prefix that produced a SUGGEST_RANK, so the observation is reproducible.
+  context    String?
+  capturedAt DateTime     @default(now())
+
+  term KeywordTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@index([termId, source, capturedAt])
+  @@map("keyword_signals")
+}
+
+/// The current belief about a term's demand, and how it was reached.
+/// How contested a term is, per store.
+///
+/// Deliberately separate from KeywordVolumeEstimate and keyed by platform:
+/// demand for "habit tracker" is roughly the same wherever someone types it,
+/// but the wall of incumbents in front of it is not. A term can be winnable on
+/// the App Store and hopeless on Play.
+model KeywordCompetition {
+  id       String   @id @default(cuid())
+  termId   String
+  platform Platform
+  /// 0-100. Modelled from the strength of the apps currently ranking, never
+  /// measured — no store publishes this.
+  difficulty     Int
+  /// Apps the store returned. Shallow result sets are easier to break into.
+  resultCount    Int
+  /// Ratings held by the top ten combined, the raw input behind `difficulty`.
+  topRatingCount Int
+  /// Store ids of the apps ranking for this term, in order, top ten.
+  ///
+  /// Recorded from results `scoreCompetition` already fetches, so it costs no
+  /// extra requests. It is the strongest relatedness signal the corpus has:
+  /// when the same apps come back for two terms, the store is treating them as
+  /// one search whatever the words are. See docs/KEYWORD-DATABASE.md §11.
+  ///
+  /// Defaulted so the column is never NULL. It was added without one, which
+  /// left 3,114 existing rows NULL — indistinguishable from an empty result set
+  /// once Prisma read them (it coerces NULL to []), but invisible to an
+  /// `isEmpty` filter, so a backfill would have silently skipped them.
+  topApps        String[]      @default([])
+  /// Human-readable, so a number on a screen can always be traced.
+  method         String
+  computedAt     DateTime @default(now())
+
+  term KeywordTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@unique([termId, platform])
+  @@index([platform, difficulty])
+  @@index([termId, platform, difficulty])
+  @@map("keyword_competition")
+}
+
+/// The crawl frontier.
+///
+/// A corpus of hundreds of thousands of terms takes days of wall-clock, which
+/// means the work cannot live in memory: the process will be restarted, the
+/// network will fail, and a laptop will sleep. Every unit of crawl work is a
+/// row here so a run resumes exactly where it stopped instead of starting the
+/// alphabet again.
+model CrawlTask {
+  id        String    @id @default(cuid())
+  kind      CrawlKind
+  platform  Platform
+  country   String    @default("us")
+  /// The prefix to expand, or the term to score.
+  input     String
+  /// 1 for "a", 2 for "ab", 3+ for terms expanded from a discovered term.
+  depth     Int       @default(1)
+  state     CrawlState @default(PENDING)
+  attempts  Int       @default(0)
+  /// New terms this task produced. Drives whether it is worth expanding.
+  discovered Int      @default(0)
+  error      String?
+  createdAt  DateTime @default(now())
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  @@unique([kind, platform, country, input])
+  @@index([state, kind, platform, depth])
+  @@map("crawl_tasks")
+}
+
+enum CrawlKind {
+  /// Expand a prefix through store autocomplete.
+  PREFIX
+  /// Mine one category chart's metadata.
+  CATEGORY
+  /// Score one term's competition.
+  DIFFICULTY
+}
+
+enum CrawlState {
+  PENDING
+  RUNNING
+  DONE
+  /// Retried to exhaustion. Kept rather than deleted so a systematic failure
+  /// is visible as a count instead of as an unexplained gap in the corpus.
+  FAILED
+}
+
+model KeywordVolumeEstimate {
+  id     String @id @default(cuid())
+  termId String @unique
+  /// A 0-100 ordinal index while ESTIMATED; a real monthly figure when MEASURED.
+  value  Float
+  /// Displayed. A reader must always be able to tell inference from measurement.
+  kind   EstimateKind @default(ESTIMATED)
+  confidence Confidence @default(LOW)
+  /// Human-readable, e.g. "autocomplete rank across 6 prefixes".
+  method     String
+  computedAt DateTime @default(now())
+
+  term KeywordTerm @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  @@index([kind, value])
+  @@index([termId, value])
+  @@index([value])
+  @@map("keyword_volume_estimates")
+}

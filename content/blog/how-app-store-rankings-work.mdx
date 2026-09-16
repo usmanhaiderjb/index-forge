@@ -1,0 +1,172 @@
+---
+title: "How App Store Rankings Actually Work"
+description: "What moves a keyword rank, what moves a chart position, and why the two respond to completely different inputs. Including the measurement artefacts that make a stable app look like it is collapsing."
+date: "2026-08-21"
+category: "rank-tracking"
+tags: ["rank-tracking", "measurement", "ios", "android"]
+author: "The ASO team"
+---
+
+"Our ranking dropped" is one of the least useful sentences in app marketing, because it
+describes at least three different events with three different causes and three different
+responses.
+
+This guide separates them: what a keyword rank is, what a chart position is, what actually
+moves each, and how to tell a real change from an artefact of how you measured.
+
+## Two numbers, both called "rank"
+
+**Keyword rank** is where your app appears when someone searches a specific term. It
+answers: *for the phrase "habit tracker", are we third or thirtieth?*
+
+**Chart position** is where you appear in Top Free, Top Paid or Top Grossing for a
+category or country. It answers: *among all fitness apps, how are we doing right now?*
+
+They move for different reasons and on different timescales.
+
+| | Keyword rank | Chart position |
+| --- | --- | --- |
+| Driven by | relevance and conversion for that term | download velocity |
+| Timescale | days to weeks | hours to days |
+| Responds to | metadata, ratings, engagement | a spike in installs |
+| Fixed by | better targeting and listing | more downloads, faster |
+
+A drop in chart position with stable keyword ranks means your download velocity fell —
+possibly because a campaign ended, possibly because a competitor's campaign started. A
+drop in keyword rank with a stable chart position means a relevance change: your metadata,
+your conversion rate for that term, or a competitor's.
+
+**Reading one as the other sends you optimising the wrong thing.** Rewriting your subtitle
+will not fix a velocity problem, and buying installs will not fix a relevance problem.
+
+## What moves a keyword rank
+
+Both stores keep their algorithms private. What follows is the consensus of what is
+observable, not a leaked spec.
+
+### Relevance signals
+
+- **Metadata match.** Whether the term appears in the fields the store indexes — and as
+  covered in [our keyword research guide](/blog/app-store-keyword-research), those fields
+  differ sharply between iOS and Android.
+- **Field weight.** Title outweighs subtitle, which outweighs the keyword field. A term in
+  your title is a stronger claim than the same term buried in keywords.
+- **Exact versus combination match.** Apple builds combinations across your fields, so
+  "habit" and "tracker" in separate fields can rank for "habit tracker".
+
+### Performance signals
+
+- **Tap-through rate** for that term. If people search a keyword, see your app, and scroll
+  past, the store learns you are not the answer.
+- **Conversion rate** from product page to install.
+- **Retention and engagement** after install. Both stores factor in whether users keep the
+  app. This is the mechanism that punishes ranking for terms you do not serve.
+- **Ratings and review velocity.** Covered in the [reviews
+  cluster](/blog/category/reviews) — the effect is real but slower than most people expect.
+
+The performance signals are why keyword targeting cannot be gamed for long. Ranking for a
+term you do not serve produces installs that churn, and churn feeds back into ranking.
+
+## What moves a chart position
+
+Charts are much simpler and much more brutal: **download velocity, weighted heavily toward
+the last few hours.**
+
+A few consequences follow:
+
+- Charts move fast. A campaign can lift you within a day and drop you within a day of
+  stopping.
+- Charts are not a measure of ASO. They are a measure of acquisition.
+- Category charts are winnable in a way overall charts are not. Few apps ever appear in an
+  overall top 200; a category chart is a realistic target.
+
+If your chart position is your headline metric, you are measuring your paid spend.
+
+## The measurement problems
+
+This is where most ranking reports quietly lie, and none of it involves the stores doing
+anything wrong.
+
+### Scan depth
+
+Rank tracking works by searching a term and finding your app in the results. But the search
+only goes so deep — typically the top 100 or 200.
+
+If your app is not in that window, the honest answer is **"not found in the top 100"**.
+What most tools record is a blank, or worse, a fixed number like 250.
+
+Those are different claims. "Not in the top 100" and "ranked 250th" look identical in a
+chart and mean different things: the first is a limit of the measurement, the second is a
+measurement. **A rank report that does not record its own scan depth cannot be
+interpreted** — you cannot tell a genuine fall from an app that simply moved past the edge
+of the scan.
+
+### Personalisation and location
+
+Search results differ by country, language, device, and sometimes by user history. A rank
+measured from one location is not a global truth. If your tool does not tell you which
+storefront a number came from, it is telling you a number from *somewhere*.
+
+### Timing
+
+Rank is a snapshot. Measured at different times of day, a term that sits at the boundary
+between positions 10 and 11 will look like it is oscillating. It is not; your sampling is.
+
+The fix is consistency: same time, same storefront, every day. An inconsistent measurement
+is worse than a less frequent one.
+
+### Competitor comparisons taken separately
+
+If you measure your own rank now and your competitor's in ten minutes, the two numbers are
+not comparable — the result page may have changed between them.
+
+Competitor positions are only meaningful when **captured from the same result page your own
+rank was measured on.** Anything else is comparing two different moments and calling it a
+gap.
+
+## How to read a rank chart properly
+
+1. **Check the scan depth first.** If it is not recorded, distrust every gap in the series.
+2. **Look at the trend, not the day.** Daily movement of a few positions is noise on almost
+   any term.
+3. **Segment by storefront.** An average across countries hides the fact that you are
+   climbing in one market and falling in another.
+4. **Correlate with what you changed.** If you cannot point at a metadata change, a rating
+   shift, or a campaign, you are probably looking at noise.
+5. **Check whether the term itself moved.** Terms rise and fall in popularity. Holding
+   position on a term nobody searches any more is not a win.
+
+## What to do when a rank drops
+
+Work through it in this order, because the cheap checks eliminate most cases:
+
+1. **Is it a measurement artefact?** Scan depth, storefront, timing. Most "drops" die here.
+2. **Did the chart move too?** If both fell together, it is velocity, not relevance.
+3. **Did you change metadata recently?** Both stores re-index on a delay. A dip in the days
+   after a change is common and often recovers.
+4. **Did your ratings move?** A drop below a psychological threshold — 4.0 especially —
+   affects both ranking and tap-through.
+5. **Did a competitor change?** Someone else's new subtitle can push you down a term
+   without anything on your side changing at all.
+6. **Is the term seasonal?** Some categories swing hard by month.
+
+Only after all six is "our ASO got worse" the likeliest explanation.
+
+## The short version
+
+- Keyword rank measures relevance. Chart position measures velocity. Do not treat one as
+  evidence about the other.
+- Post-install engagement feeds ranking, which is why targeting irrelevant terms
+  backfires.
+- **Scan depth is the single most important field in a rank report** and the one most often
+  missing.
+- Competitor positions are only comparable when captured from the same result page.
+- Most drops are measurement artefacts, delayed re-indexing, or someone else's change.
+
+---
+
+*This guide is the pillar for our [rank tracking](/blog/category/rank-tracking) cluster.
+For why the two numbers respond to different inputs in more detail, read [keyword rank and
+chart position](/blog/keyword-rank-vs-chart-position). For why store-reported figures keep
+changing after the fact, read [store data is not
+final](/blog/store-data-is-not-final).*

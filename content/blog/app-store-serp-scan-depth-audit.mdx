@@ -1,0 +1,117 @@
+---
+title: "Top 10 vs Top 100: Why SERP Scan Depth Dictates Keyword Strategy"
+description: "How search impression drop-off curves define mobile user behavior, why tracking rank depth beyond position 20 is essential, and how scan depth audits prevent false alarms."
+date: "2026-09-07"
+category: "rank-tracking"
+tags: ["rankings", "serp", "measurement", "strategy"]
+author: "The ASO team"
+---
+
+When reviewing rank tracking reports, developers frequently ask two contradictory questions:
+1. *"Why should I care if my rank moved from #84 to #42? Nobody scrolls past position #10 anyway."*
+2. *"My keyword tool says I lost rank on 50 keywords overnight! Is my app penalized?"*
+
+Both questions stem from a misunderstanding of **SERP Scan Depth**: the physical limit of how deep a search tracking crawler scans store search results, and how search impression probability decays across mobile viewports.
+
+In this guide, we examine the mathematics of mobile SERP impression distribution, explain why deep rank tracking (positions 1–100) is the only way to measure SEO momentum, and show how shallow rank trackers create phantom ranking drops.
+
+```
++-----------------------------------------------------------------------------------+
+|               MOBILE APP STORE SEARCH IMPRESSION DROP-OFF CURVE                   |
++-----------------------------------------------------------------------------------+
+|  SERP Position       Viewport Location       % of Total Search Impressions        |
++-----------------------------------------------------------------------------------+
+|  Rank #1             Above the Fold (Screen 1)   ████████████████████ 58.4%       |
+|  Rank #2             Bottom of Screen 1          ████████ 22.1%                   |
+|  Rank #3             First Scroll (Screen 2)     ████ 9.6%                        |
+|  Rank #4             First Scroll (Screen 2)     ██ 4.2%                          |
+|  Rank #5 - #10       Screens 3 & 4               █ 3.8%                           |
+|  Rank #11 - #30      Deep Scroll                 ▎ 1.4%                           |
+|  Rank #31 - #100     Tail Exploration            ▏ 0.5%                           |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The Impression Decay Curve on Mobile
+
+Unlike desktop Google search results where 10 blue links appear on a single wide screen, mobile app stores display heavy visual cards (app icon, screenshots, star rating, video preview).
+
+On an iPhone 16 Pro, **a user sees exactly 1.5 organic app listings before scrolling**.
+
+Empirical click-through and impression distribution data reveals the steepness of the drop-off:
+
+| Position Band | Avg CTR to Install | Primary User Intent Mode | Strategic Action Required |
+| :--- | :--- | :--- | :--- |
+| **Position #1** | 28% – 42% | Immediate Decision / Brand Search | Protect via exact match title and rating defense |
+| **Positions #2 – #3** | 8% – 16% | Comparative Browsing | Win on icon visual contrast and star rating |
+| **Positions #4 – #10** | 1.5% – 4.0% | Feature Specific / Exhaustive | Optimize screenshot caption legibility |
+| **Positions #11 – #30** | 0.2% – 0.8% | Niche Preference / Dissatisfaction | Candidate for Title escalation |
+| **Positions #31 – #100** | < 0.05% | Algorithmic Indexing Sandbox | Indicates active indexing; needs velocity boost |
+
+---
+
+## Why Deep Tracking (Rank #11 to #100) Matters
+
+If positions #30 through #100 generate less than 1% of direct installs, why pay to track them daily?
+
+Because **ranking movement in deep positions is the leading indicator of future top-10 performance**.
+
+```
+[New App Update Released with New Keywords]
+                     │
+                     ▼
+  Day 1–3: App Enters Deep Index (Rank #85)
+                     │
+                     ▼
+  Day 4–7: Positive Click & Install Velocity (Rank #85 ──► Rank #34)  <-- Leading Signal
+                     │
+                     ▼
+  Day 8–14: Reaches Second Viewport (Rank #34 ──► Rank #12)
+                     │
+                     ▼
+  Day 15+: Breaks into Conversion Viewport (Rank #12 ──► Rank #4)     <-- Lagging Revenue
+```
+
+If your tracking tool only monitors the top 10 or top 20:
+* You cannot detect that your metadata change worked on Day 4 when the keyword climbed from #85 to #34.
+* You cannot diagnose whether a drop from #8 to #25 was a minor fluctuation or a complete indexing loss down to #150.
+
+---
+
+## The "Scan Depth Phantom Drop" Trap
+
+A massive source of panic for ASO teams is the **Phantom Ranking Drop**.
+
+Suppose an ASO platform defaults to a shallow scan depth of Top 25.
+* On Monday, your app is ranked **#24**. The tool reports `Rank: 24`.
+* On Tuesday, a competitor gets 10 downloads and pushes your app to **#26**.
+* Because the tool stops scanning at #25, it cannot find your app. It flags the keyword as `"LOST"` or `Rank: >25` (plotted as a drop to zero).
+
+The dashboard flashes red, triggering emergency meetings about an imaginary algorithm penalty — when in reality, the app only moved down two slots.
+
+```
+[Shallow Scan Depth (Top 25 Limit)]
+Monday:  Rank #24  [Visible in Report]
+Tuesday: Rank #26  [TRUNCATED: Reports as "DROPPED OUT OF SEARCH"]
+
+[IndexForge Deep Scan (Top 100 with Stored Depth)]
+Monday:  Rank #24  (Depth: 100)
+Tuesday: Rank #26  (Depth: 100)  --> Accurately recorded as -2 delta, NOT a penalty!
+```
+
+---
+
+## How IndexForge Records Scan Depth
+
+In the [IndexForge Rank Tracking engine](/features/rank-tracking), every recorded rank point is permanently stored with its **Audit Scan Depth**.
+
+If your account configuration scans to depth 100, and your app sits at #74, the system records:
+`{ rank: 74, scanDepth: 100, status: "INDEXED" }`
+
+If your app drops beyond position 100, it records:
+`{ rank: null, scanDepth: 100, status: "OUT_OF_DEPTH" }`
+
+This prevents a setting change (e.g. switching an app from a 50-deep scan to a 100-deep scan) from ever polluting historical charts with false historical deltas.
+
+To audit your complete SERP landscape across 100 positions and track competitor movements on the same result pages, explore our [Competitor Intelligence feature](/features/competitor-intelligence).

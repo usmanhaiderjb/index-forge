@@ -1,0 +1,98 @@
+---
+title: "Google Play Long Description Formatting: HTML Tags, Keyword Placement & Entity Salience"
+description: "The complete technical specification for formatting your 4,000-character Google Play description with permitted HTML tags, structured headings, and entity salience."
+date: "2026-09-06"
+category: "store-listing"
+tags: ["google-play", "android", "seo", "metadata"]
+author: "The ASO team"
+---
+
+Unlike the Apple App Store, which completely ignores your 4,000-character description for search rankings, **Google Play uses your long description as a primary search index source**.
+
+However, treating the Google Play description as a wall of unformatted text or an old-school keyword-stuffed webpage leads to poor indexing, low readability, and automated policy flags.
+
+Google Play supports a specific subset of **HTML formatting tags**, semantic document headings, and structured lists. When used properly, HTML formatting not only improves human readability, but also signals document hierarchy to Google's Natural Language Processing (NLP) indexing bots.
+
+In this technical guide, we review supported HTML tags, layout architecture, keyword density guidelines, and common formatting pitfalls on Google Play.
+
+```
++-----------------------------------------------------------------------------------+
+|               GOOGLE PLAY DESCRIPTION HTML & HIERARCHY MAP                        |
++-----------------------------------------------------------------------------------+
+|  <b>Core Entity Opening Hook</b> (First 200 chars - High Salience Weight)         |
+|                                                                                   |
+|  <b>Feature Pillar Heading #1</b>                                                 |
+|  Short descriptive paragraph rich in contextual entity tokens.                    |
+|  • Bullet item #1 with specific capabilities                                      |
+|  • Bullet item #2 with integration details                                        |
+|                                                                                   |
+|  <b>Technical Specifications & Privacy Standards</b>                              |
+|  Detailed formats, offline capabilities, and compliance standards.                |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## Supported HTML Tags on Google Play
+
+Google Play Console officially renders only a small, strict subset of HTML tags. Using unsupported tags (like `<h1>`, `<div>`, `<table>`, or `<span>`) will cause formatting to break or appear as raw unrendered text code.
+
+| Permitted HTML Tag | Visual Render on Google Play | Strategic Usage in ASO |
+| :--- | :--- | :--- |
+| `<b>` ... `</b>` | **Bold Text** | Use for feature section headings and key value callouts. |
+| `<i>` ... `</i>` | *Italicized Text* | Use for short quotes, testimonials, or legal disclaimers. |
+| `<u>` ... `</u>` | <u>Underlined Text</u> | Use sparingly for emphasis on critical features. |
+| `<br>` | Line Break | Controls line breaks and paragraph spacing. |
+| `&bull;` or `•` | Bullet Point Symbol | Formats clean feature lists (creates readable bullet lists). |
+| `<a href="...">` | Hyperlink | **RESTRICTED**: Only allowed in specific policy / legal contexts. |
+
+> **Warning**: Google Play prohibits hidden HTML styling, font color overrides, and deceptive links. Keep all HTML tags clean and minimal.
+
+---
+
+## The 4,000-Character Description Architecture
+
+To maximize organic keyword discovery while maintaining high visual readability on Android devices, structure your 4,000-character budget into 4 distinct modules:
+
+```
+[4,000-Character Allocation Budget]
+├── 1. The Core Entity Hook (300 characters)
+│   └── High-salience paragraph. State what the app does in natural, authoritative English.
+├── 2. Three Feature Pillars with Bullet Lists (2,400 characters)
+│   └── 3 structured sections with <b>Section Heading</b> and 4-5 bullet points each.
+├── 3. Use-Case Workflows (700 characters)
+│   └── Real-world user stories incorporating diverse long-tail search intent.
+└── 4. Technical Specs & FAQ (600 characters)
+    └── Formats, battery optimization, privacy, and support information.
+```
+
+### Clean Google Play HTML Markdown Template
+
+```html
+<b>Track daily expenses, manage family budgets, and grow your savings.</b><br><br>
+Whether you need a simple receipt scanner, a monthly budget planner, or a shared household expense tracker, our financial engine gives you total clarity over your money.<br><br>
+
+<b>KEY FEATURES & CAPABILITIES</b><br><br>
+
+<b>• Smart Expense Tracking:</b> Log transactions in seconds with intelligent category auto-detection.<br>
+<b>• Receipt & Bill Scanner:</b> Use built-in OCR text recognition to digitize receipts instantly.<br>
+<b>• Custom Budget Goals:</b> Set monthly spending caps for groceries, entertainment, and bills.<br>
+<b>• Multi-Currency & Bank Sync:</b> Reconcile accounts across 150+ international currencies.<br><br>
+
+<b>DESIGNED FOR PRIVACY & SECURITY</b><br><br>
+Your financial data belongs exclusively to you. All transactions are stored locally with optional encrypted cloud backup. No advertising trackers, no data selling, and full offline functionality.<br><br>
+
+<b>Download today and take control of your financial future.</b>
+```
+
+---
+
+## Google Play Spam Policies: How to Avoid Penalties
+
+Google's automated Play Store policy scanners actively penalize listings that violate metadata guidelines:
+
+1. **The Keyword Stuffing Rule**: Repeating the same keyword 10+ times in a list format (e.g. *"budget, budget app, best budget, free budget"*) triggers automated search suppression or rejection.
+2. **Anonymous Testimonials**: Writing *"Best app ever! – User Review"* is a direct violation of Google Play Developer Policy. All quotes must be verifiable or omitted.
+3. **Price Claims in Copy**: Phrases like *"Free Download"*, *"Cheapest App"*, or *"Sale 50% Off"* in the long description violate Google Play store listing policies.
+
+To optimize your Google Play copy alongside your iOS metadata within exact store limit constraints, explore our [AI ASO Writer](/features/ai-aso-writer).

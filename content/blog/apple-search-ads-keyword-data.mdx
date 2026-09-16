@@ -1,0 +1,160 @@
+---
+title: "Apple Search Ads is the only real keyword volume data you can get"
+description: "Every App Store search volume figure is an estimate except one. ASA search-term reports contain measured impressions per term — here is how to mine them for organic keyword research."
+date: "2026-08-22"
+category: "keyword-research"
+tags: ["keywords", "ios", "apple-search-ads", "measurement"]
+author: "The ASO team"
+---
+
+There is exactly one source of true App Store search volume available to anyone outside
+Apple, and most teams already have access to it without realising what it is.
+
+**Apple Search Ads search-term reports contain measured impressions per keyword per
+storefront.** Not modelled, not estimated from autocomplete ordering — counted, by Apple,
+from real searches.
+
+Every other volume number you have seen is inferred. As covered in [our keyword research
+guide](/blog/app-store-keyword-research), autocomplete ordering supports a relative index
+and nothing more. ASA is the exception, and it is worth restructuring your research process
+around.
+
+## What the report actually contains
+
+Run a Search Ads campaign — even a small one — and you can export a search-term report
+showing, for each term users actually typed:
+
+- **Impressions** — how many times your ad was eligible and shown
+- **Taps** and tap-through rate
+- **Conversions** and conversion rate
+- **Spend** and cost per acquisition
+
+The impressions column is the prize. It is a real measurement of demand for that term in
+that storefront, in that period.
+
+The conversion column is arguably more valuable and almost always ignored.
+
+## Two things this tells you that nothing else can
+
+### 1. Which terms have demand you can actually see
+
+A term with 40,000 impressions and a term with 400 look identical in an autocomplete-derived
+index if they both happen to be suggested early. ASA separates them with a number.
+
+This immediately reprices your organic keyword list. Terms you assumed were head terms turn
+out to be niche; terms you dismissed turn out to carry real volume in specific storefronts.
+
+### 2. Which terms convert for *your* app
+
+This is the part that changes decisions.
+
+A term can have high volume and convert terribly for you — because the searcher wants
+something adjacent to what you built. ASA shows you conversion rate per term, from real
+users, before you have spent a single character of metadata on it.
+
+**That is a live test of keyword relevance with a real budget attached.** Organic ranking
+takes weeks to establish and weeks to unwind. ASA tells you in days whether a term is worth
+chasing.
+
+The rule that follows:
+
+> **Do not spend metadata characters on a term that converts badly in ASA.**
+
+You have 30 characters of title, 30 of subtitle, 100 of keywords. Spending them on a term
+that demonstrably does not convert is the most expensive kind of mistake, because it also
+costs you the ranking you would have had for something else.
+
+## How to mine it for organic research
+
+### Start with broad match and let Apple find terms
+
+Set up a campaign with **broad match** or Apple's Search Match enabled and a modest budget.
+Apple will show your ad against terms you did not think to bid on, and the search-term
+report records every one.
+
+This is a discovery mechanism, not just an advertising one. It surfaces the language real
+users type, which is frequently not the language you would have guessed.
+
+### Export the search-term report, not the keyword report
+
+They are different. The keyword report shows terms **you bid on**. The search-term report
+shows what users **actually typed**, including the long-tail variants that matched your
+broad keyword.
+
+The second is where the research value sits.
+
+### Sort by impressions, then filter by conversion
+
+Your organic priority list is roughly:
+
+1. **High impressions, high conversion** — chase these hard, they belong in your title
+2. **High impressions, low conversion** — do not spend metadata on them, whatever their
+   volume
+3. **Low impressions, high conversion** — long tail worth keeping; cheap to rank for
+4. **Low impressions, low conversion** — ignore
+
+Most teams look only at column one and wonder why their metadata rewrite did not move
+installs.
+
+### Segment by storefront
+
+ASA reports per storefront. A term with real volume in the US may be dead in the UK, and
+a term nobody searches in English-speaking markets may carry your entire German install
+base.
+
+If you are localising metadata, this is the data that tells you which terms to localise
+*to* — rather than translating your English keywords and hoping.
+
+## The caveats, stated plainly
+
+**ASA impressions are ad impressions, not total searches.** You saw the searches where your
+ad was eligible and won the auction. The true search count is higher, by an unknown factor
+that varies with your bid, your relevance and your competition.
+
+So use it as a **relative** measure between terms, and as an **absolute floor** — the true
+volume is at least this. Do not treat it as the total.
+
+**It only covers terms you were eligible for.** Terms far outside your category will never
+appear, however popular they are.
+
+**It costs money.** A discovery campaign is a real budget line. For most teams it is
+cheaper than a year of a tool subscription that models the same numbers less accurately, but
+it is not free.
+
+**Apple's matching is fuzzy.** Search Match will show your ad against terms with only loose
+relation to your keyword. Those rows are still real searches by real users, so they are
+still data — just do not assume they reflect your bid.
+
+## What to do if you do not run ASA
+
+Then accept that your volume numbers are inferred, and design around that:
+
+- Rely on **autocomplete ordering** for relative demand, and treat the ordering as the
+  finding rather than any number derived from it.
+- Weight **evidence** heavily. A term observed once is a guess; one seen across several
+  independent queries and on both stores is a finding.
+- Check that a **market exists** — a term with almost no competing apps has almost no
+  searchers.
+- Use **your own review text** as a keyword source. Users describe your app in their own
+  words, and those words are what they type.
+
+That gets you a defensible ordering. It does not get you volume, and no tool that lacks
+impression data can give you volume either, whatever it prints.
+
+## The short version
+
+- ASA search-term reports are the only measured App Store volume available outside Apple.
+- The conversion column matters more than the impressions column — it tells you which terms
+  are relevant to *your* app before you commit metadata to them.
+- Use the search-term report, not the keyword report.
+- Segment by storefront before localising anything.
+- Impressions are a floor and a relative measure, never a total.
+- Without ASA, your volume figures are inferred — so lean on evidence and relevance instead
+  of precision you do not have.
+
+---
+
+*Part of our [keyword research](/blog/category/keyword-research) cluster. The full process
+is in [App Store Keyword Research: A Complete
+Guide](/blog/app-store-keyword-research). For which fields to spend your findings on, see
+[iOS and Android index different things](/blog/ios-vs-android-keyword-indexing).*

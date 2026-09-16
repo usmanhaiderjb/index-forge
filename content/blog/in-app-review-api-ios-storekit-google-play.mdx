@@ -1,0 +1,117 @@
+---
+title: "StoreKit SKStoreReviewController vs Google In-App Review API: Rules & Limits"
+description: "The complete technical guide to implementing SKStoreReviewController on iOS and Google In-App Review API on Android: quotas, silent suppression, and milestone timing."
+date: "2026-09-04"
+category: "reviews"
+tags: ["reviews", "ios", "android", "storekit", "engineering"]
+author: "The ASO team"
+---
+
+Prompting users for an app rating at the right moment can single-handedly transform your app's rating from a mediocre 3.8 to a stellar 4.8 stars.
+
+Prompting them at the wrong moment — or breaking platform rating guidelines — can get your app update rejected by Apple, cause your rating dialog to be **silently suppressed by the operating system**, or trigger angry 1-star reviews from frustrated users interrupted mid-task.
+
+Both Apple's `StoreKit (SKStoreReviewController)` and Google's `In-App Review API (Play In-App Review)` have strict, non-negotiable rules, quotas, and behavioral sandboxes.
+
+In this technical engineering guide, we dissect the inner workings of both APIs, explain why your dialog might not be showing up, and share the optimal milestone triggers that maximize 5-star conversion.
+
+```
++-----------------------------------------------------------------------------------+
+|               IN-APP RATING APIS: APPLE STOREKIT vs GOOGLE PLAY                   |
++-----------------------------------------------------------------------------------+
+|  Specification             Apple StoreKit (iOS)        Google In-App Review (Play)|
++-----------------------------------------------------------------------------------+
+|  API Class                 SKStoreReviewController     ReviewManager / ReviewInfo |
+|  OS Quota Enforcement      MAX 3 times per 365 days    Strict dynamic time quota  |
+|  Silent Suppression        YES (Returns void silently) YES (Fails silently)       |
+|  Custom UI Pre-Prompts     STRICTLY PROHIBITED         STRICTLY PROHIBITED        |
+|  App Leaves App?           NO (Inline modal overlay)   NO (Inline bottom sheet)   |
+|  Development Testing       Always displays in debug    Must use Internal App Test |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The iOS StoreKit Rules (SKStoreReviewController)
+
+On iOS, rating prompts are invoked via StoreKit:
+
+```swift
+import StoreKit
+
+// In iOS 14+ / 17+ / 18+:
+if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+    SKStoreReviewController.requestReview(in: windowScene)
+}
+```
+
+### The 3 Golden Rules of iOS Rating Prompts:
+
+1. **The 365-Day Quota (3 Times Maximum)**:
+   * Apple strictly enforces a quota of **maximum 3 prompts per user per 365-day rolling window**.
+   * If your app calls `requestReview()` a 4th time, iOS silently ignores the call. No error is thrown, no callback is returned, and nothing appears on screen.
+2. **Users Can Disable Rating Prompts Globally**:
+   * If a user turns off **Settings > App Store > In-App Ratings & Reviews**, iOS will permanently suppress all StoreKit rating dialogs across all apps on their device.
+3. **The Pre-Prompt Prohibition (Guideline 5.6.1)**:
+   * Apple strictly forbids "Gatekeeping" or "Gating" rating dialogs (e.g. showing a custom alert asking *"Do you love our app? Yes / No"*, and only showing Apple's dialog if they tap Yes).
+   * Doing this will result in immediate App Review rejection.
+
+---
+
+## The Google Play In-App Review API (Android)
+
+On Android, Google Play provides the `ReviewManager`:
+
+```kotlin
+val manager = ReviewManagerFactory.create(context)
+val request = manager.requestReviewFlow()
+request.addOnCompleteListener { task ->
+    if (task.isSuccessful) {
+        val reviewInfo = task.result
+        val flow = manager.launchReviewFlow(activity, reviewInfo)
+        flow.addOnCompleteListener { _ ->
+            // Flow finished. Note: Google DOES NOT tell you if the user rated!
+        }
+    }
+}
+```
+
+### Google Play Quota & Suppression Behavior:
+* Google enforces an undocumented, dynamic quota. Calling `launchReviewFlow()` does **not** guarantee the dialog will display.
+* If the user has recently submitted a review, or if the quota threshold has been exceeded, Google silently completes the task without rendering the bottom sheet.
+* **Your code must never block user progress waiting for the review flow to complete.**
+
+---
+
+## 4 Proven In-App Milestone Triggers
+
+Never prompt a user on launch, never prompt them during onboarding, and never prompt them immediately after a crash.
+
+The golden rule of rating prompt engineering is: **Prompt only immediately after the user experiences unequivocal core value.**
+
+```
+[4 High-Converting Milestone Triggers]
+├── 1. The Streak Milestone (User completes a 7-day or 30-day streak)
+├── 2. The Core Value Creation (User exports a finished PDF, video, or receipt)
+├── 3. The Money-Saving Moment (User completes their first budget reconciliation)
+└── 4. The Positive Retention Loop (User's 5th active app session over 14 days)
+```
+
+| In-App Milestone | Why It Converts at 5-Stars | Conversion Probability |
+| :--- | :--- | :--- |
+| **Completed 7-Day Habit Streak** | User feels a profound sense of personal achievement and gratitude. | **78% 5-Star Rating** |
+| **Successfully Exported PDF File** | App just solved an immediate, high-friction work problem. | **82% 5-Star Rating** |
+| **On 1st App Open (FATAL MISTAKE)** | User has not seen the product yet. Feels annoyed by interruption. | **< 15% (High 1-Star Risk)** |
+| **Immediately After a Paywall** | User is in a defensive mindset regarding money. | **High 1-Star Risk** |
+
+---
+
+## Rating Reset on New Version Releases (iOS)
+
+In App Store Connect, whenever you submit a new binary release, Apple gives you a choice:
+`Reset Rating Summary on this release? [YES / NO]`
+
+* **When to choose NO (Default)**: If your app has a strong 4.6+ star rating with thousands of reviews, keep your cumulative social proof.
+* **When to choose YES**: If your previous release had a catastrophic bug that dragged your rating down to 3.2 stars, and you have completely fixed the bug in the new version, resetting ratings wipes the slate clean on that storefront.
+
+To model how rating improvements lift organic conversion rates and search rankings, read our guide on [Star Rating Impact on Conversion](/blog/measuring-star-rating-impact-on-conversion) or explore our [Review Management engine](/features/market-trends).

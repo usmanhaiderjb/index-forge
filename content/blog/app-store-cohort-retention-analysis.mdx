@@ -1,0 +1,100 @@
+---
+title: "Connecting ASO Keyword Sources to D1, D7, and D30 User Retention"
+description: "Why high-volume keywords with low user intent destroy long-term LTV, how to attribute retention cohorts back to search terms, and how to prune toxic keywords."
+date: "2026-09-05"
+category: "analytics"
+tags: ["analytics", "retention", "cohorts", "ltv", "keywords"]
+author: "The ASO team"
+---
+
+In traditional App Store Optimization, success is measured almost exclusively at the top of the funnel: **Rankings, Impressions, and Downloads**.
+
+If a metadata change boosts your downloads by 30%, it is declared an unqualified victory.
+
+Yet if that same keyword change attracts users who uninstall the app within 48 hours, **the net result is decreased revenue, increased server costs, and severe algorithmic demotion on Google Play**.
+
+All keywords are not created equal. A user searching for `"free offline habit tracker"` has a completely different retention and monetization profile than a user searching for `"ADHD routine planner with widget"`.
+
+In this guide, we show how to connect keyword acquisition sources to downstream retention cohorts (D1, D7, and D30), identify toxic high-churn keywords, and align your ASO metadata with long-term customer lifetime value (LTV).
+
+```
++-----------------------------------------------------------------------------------+
+|               KEYWORD INTENT vs COHORT RETENTION HEATMAP                          |
++-----------------------------------------------------------------------------------+
+|  Search Term Target         Volume    D1 Retention    D7 Retention    D30 Retention|
++-----------------------------------------------------------------------------------+
+|  "free habit tracker"       78K       34.2%           11.4%           3.8% (CHURN)|
+|  "adhd daily planner"       22K       58.1%           38.6%           24.2% (HIGH)|
+|  "family chore tracker"     14K       62.4%           44.1%           29.8% (LTV) |
+|  "habit app free"           92K       28.1%            8.2%           1.9% (TOXIC)|
++-----------------------------------------------------------------------------------+
+|  Strategic Insight: Keyword #2 and #3 generate 6x more paying subscribers despite |
+|  having 70% lower search volume!                                                  |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The Concept of "Keyword-Level Churn"
+
+When a user searches for a specific phrase, they arrive with an **explicit mental contract** about what your app should do:
+
+### Scenario A: The Generic Head-Term Trap
+* **Keyword**: `"fitness tracker"`
+* **User Intent**: Extremely broad. The user might want GPS running, step tracking, gym weights, calorie logging, or Apple Watch sync.
+* **Outcome**: If your app is a specialized HIIT interval timer, 80% of these users will open the app, realize it does not track running routes, and delete it within 5 minutes.
+* **Retention**: **D1 < 25%**.
+
+### Scenario B: The Specific High-Intent Modifier
+* **Keyword**: `"hiit interval timer with voice coach"`
+* **User Intent**: Hyper-specific. The user knows exactly what feature they need.
+* **Outcome**: The user opens your app, hears the audio cues, and immediately activates their core loop.
+* **Retention**: **D1 > 60%, D30 > 25%**.
+
+---
+
+## How Google Play & Apple Penalize High-Churn Keywords
+
+Both store algorithms actively track post-install retention:
+
+1. **Google Play 24-Hour Uninstallation Rate**:
+   * Google Play Console measures how many users uninstall your app within 24 hours of downloading.
+   * If an app ranks for a keyword but experiences an 80%+ 24-hour uninstall rate from users searching that term, **Google's ranking algorithm automatically demotes the app for that keyword**.
+2. **Apple App Store Engagement Weighting**:
+   * Apple Search Ads and organic ranking algorithms incorporate post-download active session counts into search placement calculations.
+
+---
+
+## How to Attribute Retention Back to Keywords
+
+Because the App Store Connect and Google Play Console APIs do not expose device-level IDs linked to search terms for organic traffic, use this two-pronged attribution model:
+
+```
++-----------------------------------------------------------------------------------+
+|               KEYWORD-TO-RETENTION RECONCILIATION MODEL                           |
++-----------------------------------------------------------------------------------+
+|  1. Apple Search Ads Exact-Match Attribution (Deterministic Proxy Cohorts)        |
+|     - Bid on exact match target keywords.                                         |
+|     - Pass the `adgroupId` and `keywordId` through the AdAttributionKit SDK.     |
+|     - Measure D1/D7/D30 retention in Firebase GA4 or Amplitude by keyword.        |
+|                                                                                   |
+|  2. Custom Product Page (CPP) Intent Segmentation                                 |
+|     - Route specific keyword clusters to dedicated Custom Product Pages.          |
+|     - Measure downstream subscription conversion and cohort retention by CPP ID.  |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## The 4-Quadrant Keyword Pruning Matrix
+
+When reviewing your keyword portfolio in our [App Store Keyword Research tool](/features/keyword-research), map your terms into four strategic quadrants:
+
+| Quadrant | Search Volume | D30 Retention & LTV | Strategic Action Required |
+| :--- | :--- | :--- | :--- |
+| **Q1: Growth Engines** | High | High | **Prioritize in App Title**. Protect rank #1 at all costs. |
+| **Q2: Niche Profit Drivers** | Moderate / Low | Very High | **Target in Subtitle & Cross-Locales**. High conversion margin. |
+| **Q3: Long-Tail Fillers** | Low | Low | **Keep in invisible Keyword Field only** if characters permit. |
+| **Q4: Toxic Vanity Terms** | High | Extremely Low | **PRUNE IMMEDIATELY**. High download volume that destroys Play Vitals. |
+
+To track multi-provider metrics, retention cohorts, and revenue reconciliation in a single unified view, explore our [Metrics Reconciliation Engine](/features/metrics-reconciliation).

@@ -1,0 +1,142 @@
+---
+title: "Your keyword rank did not disappear, your scan ran out"
+description: "A blank in a rank chart usually means the tracker stopped looking, not that the app stopped ranking. Why scan depth is the most important field in a rank report and the one most often missing."
+date: "2026-08-22"
+category: "rank-tracking"
+tags: ["rank-tracking", "measurement", "data-quality"]
+author: "The ASO team"
+---
+
+A keyword that was ranked 87 yesterday shows nothing today. The obvious reading is that the
+app fell out of the rankings. The likely reading is that it moved from position 87 to
+position 103 and the tracker only looked at the first hundred results.
+
+Those two events produce **the same blank cell** in most rank reports, and they call for
+completely different responses.
+
+## What a rank tracker actually does
+
+There is no ranking API. Neither Apple nor Google publishes an endpoint that answers "where
+does app X rank for term Y".
+
+So every rank tracker does the same thing you would do by hand: **search the term, read down
+the results, and note the position where your app appears.**
+
+That means the measurement has an edge. The tracker reads some number of results — 100 is
+common, 200 is generous — and if your app is not in that window, it has no answer.
+
+The honest report of that situation is **"not found in the top 100"**. What most tools
+record is a blank, a null, or a placeholder like 250.
+
+## Why this matters more than it sounds
+
+"Not found in the top 100" and "ranked 250th" are different claims:
+
+- The first is a **limit of the measurement**. Your app is somewhere past 100; the tracker
+  cannot say where.
+- The second is a **measurement**. Your app is at 250.
+
+A chart that renders both as a gap, or worse as the same number, cannot be interpreted. You
+cannot tell a genuine collapse from an app that drifted one position past the edge of the
+scan.
+
+And the difference in response is total:
+
+| Reading | Response |
+| --- | --- |
+| Fell from 87 to 103 | Nothing. Normal movement on a mid-tail term. |
+| Fell out of the top 250 | Something broke. Investigate immediately. |
+
+Treating the first as the second burns a week. Treating the second as the first misses a
+real problem.
+
+## The tell: does your report record its own depth?
+
+The question to ask of any rank tracking tool:
+
+> **How deep did you look, and did you record it with the number?**
+
+If the answer is not in the data — not in the export, not in the API response, not on the
+chart tooltip — then every gap in your history is ambiguous and always will be. You cannot
+reconstruct it later, because the scan that produced the blank is gone.
+
+A rank record should carry at minimum:
+
+- the position, or an explicit "not found"
+- **the depth that was scanned**
+- the storefront
+- the timestamp
+
+Without depth, the series is uninterpretable at exactly the moments that matter most.
+
+## Other reasons a rank vanishes
+
+Scan depth is the commonest explanation. It is not the only one.
+
+**The storefront changed.** A rank is per country. If a tool silently defaults to US and you
+launched in the UK, you are tracking a different question.
+
+**The term itself moved.** Search suggestions and result sets are not static. A term can
+stop returning your app because the store re-interpreted the query, not because you fell.
+
+**Your app was removed from the storefront.** Pricing changes, availability changes and
+review rejections all remove an app from results entirely. This produces a blank that looks
+identical to a depth problem and is considerably more urgent.
+
+**Personalisation.** Results vary by device, language and history. A tracker measuring from
+one context is one sample, not a global truth.
+
+**The measurement failed.** The request timed out, was rate limited, or was blocked. A
+tracker that records a failed fetch as "not ranked" is manufacturing data. A failed
+measurement should be recorded as a failure — and should look different from a real absence
+on the chart.
+
+That last one is worth being blunt about. **A gap caused by a network error and a gap
+caused by an app losing its ranking must not render identically**, because one requires
+retrying and the other requires action.
+
+## What to check, in order
+
+When a rank goes blank:
+
+1. **What was the scan depth?** If it is 100 and the app was at 90 yesterday, stop here. It
+   is almost certainly still ranking, just past the edge.
+2. **Did the fetch succeed?** A blank from a failed request is not data.
+3. **Is the app still in that storefront?** Search for it by name.
+4. **Did other terms move at the same time?** One term drifting is normal. Every term
+   vanishing at once is either an availability problem or a tracking problem — not an ASO
+   problem.
+5. **Did the chart position move too?** If both fell together it is velocity. See [how app
+   store rankings actually work](/blog/how-app-store-rankings-work).
+
+Only after those five is "we lost ranking for this term" the leading explanation.
+
+## Designing around it
+
+If you are building or choosing rank tracking:
+
+- **Record depth with every observation.** It costs one integer and makes the entire history
+  interpretable.
+- **Distinguish "not found" from "not measured".** Different states, different renderings.
+- **Never substitute a placeholder number.** Writing 250 for "not found in 200" invents a
+  measurement, and someone will eventually average it.
+- **Scan deeper for terms you care about**, shallower for the long tail. Depth costs
+  requests; spend them where a position past 100 would still be meaningful.
+- **Keep the storefront and timestamp** on every row.
+
+## The short version
+
+- Rank tracking works by searching and reading down the results, so it has an edge.
+- A blank usually means the scan ran out, not that the app fell out.
+- "Not found in the top 100" and "ranked 250th" are different claims and must not render
+  the same.
+- A failed fetch is not an absence of ranking and must not be recorded as one.
+- Depth, storefront and timestamp belong on every observation.
+- Most vanishings are measurement artefacts. Check those before investigating your ASO.
+
+---
+
+*Part of our [rank tracking](/blog/category/rank-tracking) cluster. Start with [How App
+Store Rankings Actually Work](/blog/how-app-store-rankings-work), and see [store data is
+not final](/blog/store-data-is-not-final) for the related problem of figures that change
+after you record them.*

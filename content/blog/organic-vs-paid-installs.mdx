@@ -1,0 +1,82 @@
+---
+title: "Total installs is the wrong number to judge ASO on"
+description: "Paid spend lifts total installs whether or not your listing improved. Separating organic from paid is what makes the metric mean something — and it is harder than subtraction."
+date: "2026-08-14"
+category: "analytics"
+tags: ["metrics", "paid-acquisition", "measurement"]
+author: "The ASO team"
+---
+
+If you are measuring App Store Optimization by total installs, you are measuring your ad budget.
+
+A campaign launch and a listing improvement look identical in that number. So does a campaign
+pause and a ranking drop. The one figure everyone reports is the one figure that cannot tell you
+whether the work you did had any effect.
+
+## The metric you actually want
+
+Organic installs — the ones you did not pay for. No store reports it. The console counts every
+install; the ad network counts the ones it claims. Neither publishes the difference.
+
+So you derive it:
+
+```
+organic = total installs − paid installs
+```
+
+That subtraction has three ways to go wrong, and all three produce a plausible-looking number.
+
+## Trap 1: your total is already double-counted
+
+If both Play Console and Firebase are connected, you have two install figures for the same app.
+They are not duplicates in the sense of being identical — Firebase counts first opens, the console
+counts installs, and they will differ by a few percent — but they describe the same event.
+
+Sum them and your total is roughly doubled. Subtract paid installs from *that*, and organic comes
+out wildly high. In our own test fixture, a de-duplicated total of 1000 with 400 paid installs
+gives 600 organic. Summing two sources first gives 1540. Same inputs, two and a half times the
+answer.
+
+Pick one authoritative source for installs *before* subtracting. The store console beats the
+analytics SDK, because the system that processes the install is closer to the truth than the one
+observing it.
+
+## Trap 2: no paid data does not mean no paid installs
+
+The tempting shortcut when an ad account is not connected is to report organic as equal to total.
+It is not. It is unknown.
+
+An app with no connected ad account might be running no campaigns — or might be running three that
+you cannot see. Declaring every install organic in that state is not a conservative default; it is
+a confident wrong answer, and it will make a paid-driven month look like an ASO win.
+
+There is a subtler version of the same mistake. An ad account connected six months ago, dark ever
+since, still has paid install rows in the database. Check for paid data *anywhere* and you will
+happily derive organic for last week, subtracting zero, and report the total as fully earned.
+
+The check has to be scoped to the window you are deriving. Better still, to the span the ad
+platform actually reported in: ad platforms omit zero-spend days rather than sending a zero, so a
+gap *inside* the reported span genuinely means no paid installs that day, while a gap outside it
+means you know nothing.
+
+## Trap 3: attribution windows produce negative organic
+
+Ad networks attribute on their own windows — a click seven days ago and an install today gets
+claimed today. The console counts the install on the day it happened. On any given day, the
+network can claim more installs than the console counted.
+
+Subtract and you get a negative number. There is no such thing as −40 organic installs.
+
+Floor it at zero, but record that you did. The discrepancy is real information: a day that floors
+is a day where attribution and the console disagree materially, and a run of them means the
+comparison is not trustworthy. Hiding that behind a clean zero throws away the signal.
+
+## What to do with the split
+
+Watch the *share*, not the count. Organic share tells you whether the listing is carrying more of
+the load this month than last, independent of what the budget did. A rising total with a falling
+organic share is a campaign working and a listing stagnating — which is a completely different
+decision from the one the total install number would have suggested.
+
+And when paid data is missing, show that it is missing. A blank is honest. A number that assumes
+away the missing input is not.
