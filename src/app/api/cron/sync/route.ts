@@ -5,6 +5,7 @@ import { safeEqual } from "@/server/crypto";
 import { db } from "@/server/db";
 import { syncListing } from "@/server/jobs/handlers/aso";
 import { syncConnection } from "@/server/jobs/handlers/connection";
+import { evaluateAlerts } from "@/server/jobs/handlers/insights";
 import { scheduleTick } from "@/server/jobs/handlers/schedule";
 import { deriveMetrics } from "@/server/metrics/derive";
 
@@ -64,6 +65,13 @@ async function handleSync(request: NextRequest) {
       }
     }
 
+    let alertsResult: unknown = null;
+    try {
+      alertsResult = await evaluateAlerts();
+    } catch (err) {
+      alertsResult = { error: (err as Error).message };
+    }
+
     let tickResult: unknown = null;
     try {
       tickResult = await scheduleTick();
@@ -77,6 +85,7 @@ async function handleSync(request: NextRequest) {
       syncedApps: appResults.length,
       connections: connectionResults,
       apps: appResults,
+      alerts: alertsResult,
       tick: tickResult,
       timestamp: new Date().toISOString(),
     });

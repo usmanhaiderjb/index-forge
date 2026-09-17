@@ -2,10 +2,6 @@
   "crons": [
     {
       "path": "/api/cron/sync",
-      "schedule": "0 */12 * * *"
-    },
-    {
-      "path": "/api/cron?job=tick",
       "schedule": "0 0 * * *"
     },
     {
