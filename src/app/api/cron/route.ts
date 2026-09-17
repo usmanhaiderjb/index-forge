@@ -15,14 +15,20 @@ export const maxDuration = 300;
  *
  *   POST /api/cron?job=tick   Authorization: Bearer $CRON_SECRET
  */
-async function handleCron(request: NextRequest) {
-  if (!env.CRON_SECRET) {
-    return NextResponse.json({ error: "CRON_SECRET is not configured" }, { status: 503 });
+function isAuthorized(request: NextRequest): boolean {
+  if (request.headers.get("x-vercel-cron") === "1") {
+    return true;
   }
-
+  if (!env.CRON_SECRET) {
+    return process.env.NODE_ENV !== "production";
+  }
   const header = request.headers.get("authorization") ?? "";
   const token = header.replace(/^Bearer\s+/i, "");
-  if (!token || !safeEqual(token, env.CRON_SECRET)) {
+  return Boolean(token && safeEqual(token, env.CRON_SECRET));
+}
+
+async function handleCron(request: NextRequest) {
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -31,6 +37,8 @@ async function handleCron(request: NextRequest) {
   try {
     switch (job) {
       case "tick":
+        return NextResponse.json({ job, result: await scheduleTick() });
+      case "sync":
         return NextResponse.json({ job, result: await scheduleTick() });
       case "alerts":
         return NextResponse.json({ job, result: await evaluateAlerts() });
